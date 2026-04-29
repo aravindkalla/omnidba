@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniDBA — Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #0F2547;
+    --blue:    #1B5FC7;
+    --blue2:   #2E75E8;
+    --sky:     #5FA8F5;
+    --skylt:   #D6EAFF;
+    --teal:    #0E8C6A;
+    --teallt:  #C8F0E3;
+    --amber:   #C77B14;
+    --amberlt: #FEF0D4;
+    --coral:   #D04A3A;
+    --corallt: #FFE5E1;
+    --purple:  #5A3FC0;
+    --purplt:  #EBE7FF;
+    --white:   #FFFFFF;
+    --offwhite:#F7F9FC;
+    --border:  #E2E8F4;
+    --text1:   #0D1B35;
+    --text2:   #4A5878;
+    --text3:   #8796B2;
+    --card:    #FFFFFF;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--offwhite);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Wrapper ───────────────────────────────────────────── */
+  .canvas {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 40px 60px;
+    background: var(--offwhite);
+    box-sizing: border-box;
+  }
+  body { overflow-x: hidden; }
+
+  /* ── Header ────────────────────────────────────────────── */
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 40px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .hero-badge {
+    background: linear-gradient(135deg, var(--blue), var(--blue2));
+    border-radius: 14px;
+    padding: 14px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(27,95,199,0.35);
+  }
+  .hero-badge svg { width: 36px; height: 36px; }
+  .hero-title { font-size: 34px; font-weight: 800; color: var(--text1); letter-spacing: -0.5px; }
+  .hero-title span { color: var(--blue2); }
+  .hero-sub { font-size: 14px; color: var(--text3); font-weight: 500; margin-top: 2px; }
+  .hero-tag {
+    margin-left: auto;
+    background: var(--teallt);
+    color: var(--teal);
+    font-size: 12px; font-weight: 700;
+    padding: 6px 14px; border-radius: 100px;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── Grid layout ────────────────────────────────────────── */
+  .grid-top    { display: grid; grid-template-columns: 320px 1fr 280px; gap: 18px; margin-bottom: 18px; }
+  .grid-mid    { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .grid-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .grid-foot   { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 18px; }
+
+  /* ── Card base ──────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 22px 22px 20px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s ease both;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    pointer-events: none;
+  }
+
+  /* card accents */
+  .card-blue   { border-color: #C2D9FF; background: linear-gradient(145deg,#F4F8FF,#fff); }
+  .card-blue::before   { box-shadow: inset 0 0 0 1.5px #C2D9FF; }
+  .card-teal   { border-color: #B8EAD8; background: linear-gradient(145deg,#F0FBF6,#fff); }
+  .card-amber  { border-color: #F5D9A0; background: linear-gradient(145deg,#FFFBF0,#fff); }
+  .card-coral  { border-color: #F5C2BA; background: linear-gradient(145deg,#FFF8F7,#fff); }
+  .card-purple { border-color: #D0C8F5; background: linear-gradient(145deg,#F8F6FF,#fff); }
+  .card-navy   { border-color: transparent; background: linear-gradient(135deg, #0F2547, #1B3A6B); }
+
+  /* ── Card header ─────────────────────────────────────────── */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; padding: 5px 10px; border-radius: 100px;
+    margin-bottom: 14px;
+  }
+  .chip-blue   { background:var(--skylt);   color:var(--blue);   }
+  .chip-teal   { background:var(--teallt);  color:var(--teal);   }
+  .chip-amber  { background:var(--amberlt); color:var(--amber);  }
+  .chip-coral  { background:var(--corallt); color:var(--coral);  }
+  .chip-purple { background:var(--purplt);  color:var(--purple); }
+  .chip-navy   { background:rgba(255,255,255,0.15); color:#fff; }
+
+  .card-title { font-size: 15px; font-weight: 700; color: var(--text1); margin-bottom: 6px; }
+  .card-title-white { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .card-body  { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .card-body-white { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.6; }
+
+  /* ── Stat row ─────────────────────────────────────────────── */
+  .stat-row { display: flex; gap: 10px; margin-top: 14px; }
+  .stat {
+    flex: 1;
+    background: var(--offwhite);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .stat-val  { font-size: 20px; font-weight: 800; color: var(--blue2); letter-spacing: -0.5px; }
+  .stat-lbl  { font-size: 10px; color: var(--text3); font-weight: 600; margin-top: 1px; }
+
+  /* ── Tier pills ──────────────────────────────────────────── */
+  .tier-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .tier-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border-radius: 14px;
+    border: 1.5px solid transparent;
+    transition: transform 0.2s;
+  }
+  .tier-item:hover { transform: translateX(3px); }
+  .tier1 { background:#F0FBF6; border-color:#B8EAD8; }
+  .tier2 { background:#FFFBF0; border-color:#F5D9A0; }
+  .tier3 { background:#FFF8F7; border-color:#F5C2BA; }
+  .tier-badge {
+    min-width: 56px; text-align: center;
+    font-size: 10px; font-weight: 800;
+    padding: 3px 8px; border-radius: 8px;
+    letter-spacing: 0.3px; margin-top: 1px;
+  }
+  .t1b { background: var(--teal);  color:#fff; }
+  .t2b { background: var(--amber); color:#fff; }
+  .t3b { background: var(--coral); color:#fff; }
+  .tier-content .tier-name { font-size: 12px; font-weight: 700; color:var(--text1); }
+  .tier-content .tier-desc { font-size: 11px; color:var(--text2); margin-top: 1px; line-height:1.4; }
+  .tier-content .tier-example {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--text3);
+    margin-top: 4px; font-style: italic;
+  }
+
+  /* ── Pipeline flow ───────────────────────────────────────── */
+  .pipeline {
+    display: flex; align-items: center; gap: 0;
+    margin: 14px 0 6px;
+    flex-wrap: nowrap; overflow: hidden;
+  }
+  .pipe-node {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; flex: 1;
+    animation: fadeUp 0.5s ease both;
+  }
+  .pipe-box {
+    width: 100%;
+    background: var(--offwhite);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 6px;
+    text-align: center;
+    font-size: 11px; font-weight: 600; color: var(--text1);
+    position: relative;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .pipe-box.active { background: var(--skylt); border-color: var(--sky); color:var(--blue); }
+  .pipe-icon { font-size: 15px; }
+  .pipe-lbl { font-size: 9px; color: var(--text3); font-weight: 500; }
+  .pipe-arrow {
+    width: 24px; min-width: 24px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+  }
+  .pipe-arrow svg { width:16px; height:16px; animation: arrowPulse 2s ease infinite; }
+
+  /* ── Tech stack badges ───────────────────────────────────── */
+  .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .tech-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 10px;
+    background: var(--offwhite); border: 1.5px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .tech-item:hover { border-color: var(--sky); }
+  .tech-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .tech-name { font-size: 11px; font-weight: 600; color: var(--text1); }
+  .tech-role { font-size: 10px; color: var(--text3); }
+
+  /* ── HITL flow ───────────────────────────────────────────── */
+  .hitl-flow {
+    display: flex; flex-direction: column; gap: 8px; margin-top: 12px;
+  }
+  .hitl-step {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 12px;
+    background: var(--offwhite); border: 1.5px solid var(--border);
+    animation: fadeRight 0.5s ease both;
+  }
+  .hitl-step:nth-child(2) { animation-delay: 0.1s; }
+  .hitl-step:nth-child(3) { animation-delay: 0.2s; }
+  .hitl-step:nth-child(4) { animation-delay: 0.3s; }
+  .hitl-step:nth-child(5) { animation-delay: 0.4s; }
+  .hitl-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--blue2); color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .hitl-num.gate { background: var(--coral); }
+  .hitl-num.ok   { background: var(--teal); }
+  .hitl-text { font-size: 11.5px; font-weight: 500; color: var(--text1); flex: 1; }
+  .hitl-tag {
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 100px; flex-shrink: 0;
+  }
+  .tag-auto   { background: var(--skylt);   color: var(--blue);  }
+  .tag-pause  { background: var(--corallt); color: var(--coral); }
+  .tag-resume { background: var(--teallt);  color: var(--teal);  }
+
+  /* ── Training section ────────────────────────────────────── */
+  .train-items { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+  .train-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 10px;
+    background: var(--offwhite); border: 1.5px solid var(--border);
+  }
+  .train-icon { font-size: 14px; }
+  .train-label { font-size: 11px; font-weight: 600; color: var(--text1); flex: 1; }
+  .train-count {
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 100px; background: var(--purplt); color: var(--purple);
+  }
+
+  /* ── Animated flow bar ───────────────────────────────────── */
+  .flow-bar {
+    margin: 16px 0 12px;
+    height: 42px; border-radius: 12px;
+    background: linear-gradient(90deg, var(--skylt), #E8F3FF, var(--skylt));
+    background-size: 200% 100%;
+    animation: shimmer 3s ease infinite;
+    display: flex; align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+    border: 1.5px solid #C2D9FF;
+    overflow: hidden;
+    position: relative;
+  }
+  .flow-bar-text { font-size: 11px; font-weight: 600; color: var(--blue); }
+  .flow-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--blue2); flex-shrink: 0;
+    animation: dotPulse 1.5s ease infinite;
+  }
+  .flow-dot:nth-child(2) { animation-delay: 0.3s; }
+  .flow-dot:nth-child(3) { animation-delay: 0.6s; }
+
+  /* ── Highlight quote ─────────────────────────────────────── */
+  .quote-bar {
+    background: linear-gradient(135deg, var(--navy), #1B3A6B);
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    animation: fadeUp 0.7s ease 0.5s both;
+  }
+  .quote-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 20px;
+  }
+  .quote-text { font-size: 13px; color: rgba(255,255,255,0.9); font-weight: 500; line-height: 1.5; }
+  .quote-text strong { color: #fff; }
+
+  /* ── Seeded SQL ──────────────────────────────────────────── */
+  .sql-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .sql-item {
+    background: var(--offwhite);
+    border: 1.5px solid var(--border);
+    border-left: 3px solid var(--blue2);
+    border-radius: 0 10px 10px 0;
+    padding: 8px 10px;
+  }
+  .sql-q { font-size: 11px; font-weight: 600; color: var(--text1); }
+  .sql-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px; color: var(--text3);
+    margin-top: 3px; line-height: 1.5;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ── Footer ──────────────────────────────────────────────── */
+  .footer-card {
+    background: linear-gradient(135deg, #0F2547, #1B3A6B, #2E3F7A);
+    border-radius: 20px; padding: 20px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    animation: fadeUp 0.6s ease 0.6s both;
+    margin-top: 18px;
+  }
+  .footer-left { display: flex; align-items: center; gap: 14px; }
+  .footer-logo {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .footer-name  { font-size: 15px; font-weight: 800; color: #fff; }
+  .footer-sub   { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+  .footer-tags  { display: flex; gap: 8px; }
+  .footer-tag {
+    font-size: 11px; font-weight: 600;
+    padding: 5px 12px; border-radius: 100px;
+    background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .evo-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    background: rgba(94, 234, 212, 0.1); /* Subtle teal glow */
+    border: 1.5px solid rgba(94, 234, 212, 0.4);
+    color: #5EEAD4; /* Bright teal for visibility */
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-left: 12px;
+  }
+
+  /* Optional: Make the stars pulse slightly */
+  .evo-icon svg {
+    animation: starTwinkle 2s ease-in-out infinite;
+  }
+
+  @keyframes starTwinkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.9); }
+  }
+  
+/* ── Architecture Button ───────────────────────────────── */
+  .btn-view-arch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--blue2), var(--blue));
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    margin-left: auto;
+    box-shadow: 0 4px 12px rgba(46,117,232,0.3);
+    transition: all 0.2s ease;
+  }
+  .btn-view-arch:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(46,117,232,0.4);
+  }
+  
+  /* ── Pulse dot ────────────────────────────────────────────── */
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #4ADE80;
+    display: inline-block;
+    animation: livePulse 2s ease infinite;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+
+  /* ── Animations ───────────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeRight {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes arrowPulse {
+    0%,100% { opacity: 0.4; transform: translateX(0); }
+    50%      { opacity: 1;   transform: translateX(2px); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  @keyframes dotPulse {
+    0%,100% { opacity: 0.3; transform: scale(0.8); }
+    50%      { opacity: 1;   transform: scale(1.2); }
+  }
+  @keyframes livePulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); }
+    50%      { box-shadow: 0 0 0 6px rgba(74,222,128,0); }
+  }
+
+  /* stagger all cards */
+  .card:nth-child(1)  { animation-delay: 0.05s; }
+  .card:nth-child(2)  { animation-delay: 0.10s; }
+  .card:nth-child(3)  { animation-delay: 0.15s; }
+  .card:nth-child(4)  { animation-delay: 0.20s; }
+  .card:nth-child(5)  { animation-delay: 0.25s; }
+  .card:nth-child(6)  { animation-delay: 0.30s; }
+  .card:nth-child(7)  { animation-delay: 0.35s; }
+  .card:nth-child(8)  { animation-delay: 0.40s; }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* divider */
+  .divider { height: 1.5px; background: var(--border); margin: 12px 0; border-radius: 2px; }
+
+  /* small label */
+  .micro { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); }
+
+  /* check list */
+  .check-list { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+  .check-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text2); line-height: 1.45; }
+  .check-icon { color: var(--teal); font-size: 13px; margin-top: 1px; flex-shrink:0; }
+
+  .span2 { grid-column: span 2; }
+  .span3 { grid-column: span 3; }
+
+  /* ═══════════════════════════════════════════════════════════
+     RESPONSIVE BREAKPOINTS
+     ≥ 1440 px  – large desktop / 40-inch monitor
+     1025–1440  – laptop        (original 3-col design)
+     769–1024   – iPad / tablet landscape
+     481–768    – iPad portrait / large phone
+     ≤ 480      – mobile phone
+     ═══════════════════════════════════════════════════════════ */
+
+  /* ── Large desktop / 40-inch monitor ──────────────────────── */
+  @media (min-width: 1440px) {
+    .canvas     { max-width: 1360px; padding: 56px 48px 72px; }
+    .hero-title { font-size: 38px; }
+    .card-title { font-size: 16px; }
+    .card-body  { font-size: 14px; }
+    .stat-val   { font-size: 24px; }
+    .chip       { font-size: 12px; }
+  }
+
+  /* ── Laptop — fix the hard-coded column widths in grid-top ── */
+  @media (max-width: 1200px) {
+    .grid-top  { grid-template-columns: 1fr 1fr; }
+    .grid-foot { grid-template-columns: 1fr 1fr; }
+    .span3     { grid-column: span 2; }
+  }
+
+  /* ── iPad / Tablet landscape (769 px – 1024 px) ─────────── */
+  @media (max-width: 1024px) {
+    .canvas      { padding: 32px 24px 48px; }
+    .grid-top    { grid-template-columns: 1fr 1fr; }
+    .grid-mid    { grid-template-columns: 1fr 1fr; }
+    .grid-bottom { grid-template-columns: 1fr; }
+    .grid-foot   { grid-template-columns: 1fr 1fr; }
+    .span2, .span3 { grid-column: span 1; }
+    .hero-title  { font-size: 26px; }
+    .pipeline    { flex-wrap: wrap; gap: 8px; }
+    .pipe-arrow  { display: none; }
+    .tech-grid   { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── iPad portrait / large phone (481 px – 768 px) ──────── */
+  @media (max-width: 768px) {
+    .canvas      { padding: 24px 16px 40px; }
+    .hero        { flex-wrap: wrap; gap: 10px; }
+    .hero-badge  { padding: 10px; }
+    .hero-tag    { margin-left: 0; order: 3; }
+    .hero-title  { font-size: 24px; }
+    .grid-top    { grid-template-columns: 1fr; }
+    .grid-mid    { grid-template-columns: 1fr 1fr; }
+    .grid-bottom { grid-template-columns: 1fr; }
+    .grid-foot   { grid-template-columns: 1fr 1fr; }
+    .span2, .span3 { grid-column: span 1; }
+    .stat-row    { gap: 6px; }
+    .flow-bar    { height: 36px; }
+    .footer-card { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .footer-tags { flex-wrap: wrap; }
+  }
+
+  /* ── Mobile phone (≤ 480 px) ─────────────────────────────── */
+  @media (max-width: 480px) {
+    .canvas      { padding: 16px 12px 32px; }
+    .hero        { flex-wrap: wrap; gap: 8px; }
+    .hero-badge  { padding: 10px; }
+    .hero-badge svg { width: 28px; height: 28px; }
+    .hero-tag    { margin-left: 0; order: 3; }
+    .hero-title  { font-size: 20px; }
+    .hero-sub    { font-size: 12px; }
+    .grid-top    { grid-template-columns: 1fr; }
+    .grid-mid    { grid-template-columns: 1fr; }
+    .grid-bottom { grid-template-columns: 1fr; }
+    .grid-foot   { grid-template-columns: 1fr; }
+    .span2, .span3 { grid-column: span 1; }
+    .tech-grid   { grid-template-columns: 1fr; }
+    .pipeline    { flex-wrap: wrap; gap: 6px; }
+    .pipe-arrow  { display: none; }
+    .pipe-node   { flex: 0 0 calc(50% - 4px); }
+    .hitl-step   { flex-wrap: wrap; gap: 6px; }
+    .stat-val    { font-size: 16px; }
+    .stat        { padding: 8px; }
+    .footer-card { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .footer-tags { flex-wrap: wrap; }
+    .btn-view-arch { font-size: 11px; padding: 8px 14px; width: 100%; justify-content: center; }
+    .quote-bar   { flex-direction: column; gap: 10px; padding: 14px; }
+    .sql-code    { font-size: 9px; }
+    .card        { padding: 16px 14px 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- ── HERO ── -->
+ <div class="hero">
+    <div class="hero-badge">
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="36" height="36" rx="10" fill="rgba(255,255,255,0.15)"/>
+        <ellipse cx="18" cy="20" rx="10" ry="7" stroke="white" stroke-width="1.8" fill="none"/>
+        <ellipse cx="18" cy="20" rx="4"  ry="7" stroke="white" stroke-width="1.4" fill="none" opacity=".6"/>
+        <line x1="8" y1="20" x2="28" y2="20" stroke="white" stroke-width="1.4" opacity=".6"/>
+        <path d="M14 11 L18 8 L22 11" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        <circle cx="18" cy="8" r="2.2" fill="white"/>
+      </svg>
+    </div>
+    
+    <div>
+      <div class="hero-title">Autonomous <span>OmniDBA</span></div>
+      <div class="hero-sub">AI-powered · Fully local · Human-in-the-loop governance</div>
+    </div>
+      
+    <a href="OmniDBA_Architecture_Flow.html" target="_blank" class="btn-view-arch">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      </svg>
+      View Architecture Diagram
+    </a>
+  </div>
+  
+  <!-- ── ROW 1: What is it | Pipeline | Stats ── -->
+  <div class="grid-top">
+
+    <!-- Card: What is it -->
+    <div class="card card-blue">
+      <div class="chip chip-blue">🤖 What it does</div>
+      <div class="card-title">Natural Language → Oracle Operations</div>
+      <div class="card-body">Type plain English. The agent classifies intent, generates Oracle SQL or RMAN scripts, and enforces human approval before any write operation.</div>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-val">100%</div><div class="stat-lbl">Local · No Cloud</div></div>
+        <div class="stat"><div class="stat-val">0</div><div class="stat-lbl">API Cost / Query</div></div>
+        <div class="stat"><div class="stat-val">&lt;1m</div><div class="stat-lbl">NL → Result</div></div>
+      </div>
+    </div>
+
+    <!-- Card: Pipeline flow -->
+    <div class="card card-teal">
+      <div class="chip chip-teal">⚡ Query Pipeline</div>
+      <div class="card-title">End-to-End Agent Flow</div>
+      <div class="flow-bar">
+        <div class="flow-dot"></div><div class="flow-dot"></div><div class="flow-dot"></div>
+        <span class="flow-bar-text">Agent processing · LLM inference active</span>
+      </div>
+      <div class="pipeline">
+        <div class="pipe-node" style="animation-delay:0.0s">
+          <div class="pipe-box active"><div class="pipe-icon">💬</div></div>
+          <div class="pipe-lbl">NL Query</div>
+        </div>
+        <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+        <div class="pipe-node" style="animation-delay:0.1s">
+          <div class="pipe-box"><div class="pipe-icon">🧭</div></div>
+          <div class="pipe-lbl">Intent Router</div>
+        </div>
+        <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+        <div class="pipe-node" style="animation-delay:0.2s">
+          <div class="pipe-box"><div class="pipe-icon">🔍</div></div>
+          <div class="pipe-lbl">RAG + SQL</div>
+        </div>
+        <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+        <div class="pipe-node" style="animation-delay:0.3s">
+          <div class="pipe-box"><div class="pipe-icon">🗄️</div></div>
+          <div class="pipe-lbl">Oracle 26ai</div>
+        </div>
+        <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+        <div class="pipe-node" style="animation-delay:0.4s">
+          <div class="pipe-box"><div class="pipe-icon">📊</div></div>
+          <div class="pipe-lbl">Chart + CSV</div>
+        </div>
+      </div>
+      <div class="card-body" style="font-size:11px;color:var(--text3);">LangGraph state machine · MemorySaver checkpointer · Per-session thread_id</div>
+    </div>
+
+    <!-- Card: Key numbers -->
+    <div class="card card-purple">
+      <div class="chip chip-purple">📐 By the numbers</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--offwhite);border:1.5px solid var(--border);border-radius:12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);">Oracle views seeded</div>
+          <div style="font-size:18px;font-weight:800;color:var(--purple);">11</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--offwhite);border:1.5px solid var(--border);border-radius:12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);">Curated AWR queries</div>
+          <div style="font-size:18px;font-weight:800;color:var(--purple);">4+</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--offwhite);border:1.5px solid var(--border);border-radius:12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);">HITL approval gates</div>
+          <div style="font-size:18px;font-weight:800;color:var(--coral);">2</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--offwhite);border:1.5px solid var(--border);border-radius:12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--text2);">Open-source components</div>
+          <div style="font-size:18px;font-weight:800;color:var(--teal);">8</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 2: Three Tiers | Tech Stack | HITL ── -->
+  <div class="grid-mid">
+
+    <!-- Card: Tier model -->
+    <div class="card card-amber">
+      <div class="chip chip-amber">🎯 Prompt Tier Model</div>
+      <div class="card-title">3-Tier DBA Complexity Mapping</div>
+      <div class="tier-list">
+        <div class="tier-item tier1">
+          <div class="tier-badge t1b">TIER 1</div>
+          <div class="tier-content">
+            <div class="tier-name">Observational — Read-only · No gate</div>
+            <div class="tier-example">"Show tablespace usage" · "List invalid objects"</div>
+          </div>
+        </div>
+        <div class="tier-item tier2">
+          <div class="tier-badge t2b">TIER 2</div>
+          <div class="tier-content">
+            <div class="tier-name">Diagnostic — AWR/ASH analytics</div>
+            <div class="tier-example">"Top SQL by elapsed time" · "Blocking sessions &gt;30s"</div>
+          </div>
+        </div>
+        <div class="tier-item tier3">
+          <div class="tier-badge t3b">TIER 3</div>
+          <div class="tier-content">
+            <div class="tier-name">Operational — RMAN · Human gate required</div>
+            <div class="tier-example">"Full backup with encryption, 4 channels"</div>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--text3);">Intent router uses <span class="mono" style="font-size:10px;color:var(--amber);">Ollama · JSON mode</span> — defaults to Tier 1 (safest) on parse failure</div>
+    </div>
+
+    <!-- Card: Tech stack -->
+    <div class="card card-blue">
+      <div class="chip chip-blue">🛠 Tech Stack</div>
+      <div class="card-title">8-Component Local Stack</div>
+      <div class="tech-grid">
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#2563EB;"></div>
+          <div><div class="tech-name">Ollama</div><div class="tech-role">LLM server · llama3.1</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#7C3AED;"></div>
+          <div><div class="tech-name">LangGraph</div><div class="tech-role">Agent orchestration</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#0891B2;"></div>
+          <div><div class="tech-name">ChromaDB</div><div class="tech-role">Vector store · ONNX</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#059669;"></div>
+          <div><div class="tech-name">Vanna.ai</div><div class="tech-role">NL2SQL · RAG engine</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#C2410C;"></div>
+          <div><div class="tech-name">Oracle 26ai</div><div class="tech-role">DB · AWR · Docker</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#DB2777;"></div>
+          <div><div class="tech-name">Streamlit</div><div class="tech-role">UI · Plotly charts</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#B45309;"></div>
+          <div><div class="tech-name">python-oracledb</div><div class="tech-role">Thin mode driver</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#1B5FC7;"></div>
+          <div><div class="tech-name">LangChain Ollama</div><div class="tech-role">JSON chains</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: HITL flow -->
+    <div class="card card-coral">
+      <div class="chip chip-coral">🛡 HITL Backup Gate</div>
+      <div class="card-title">Human-in-the-Loop Approval Flow</div>
+      <div class="hitl-flow">
+        <div class="hitl-step">
+          <div class="hitl-num">1</div>
+          <div class="hitl-text">NL backup request submitted</div>
+          <div class="hitl-tag tag-auto">AUTO</div>
+        </div>
+        <div class="hitl-step">
+          <div class="hitl-num">2</div>
+          <div class="hitl-text">Ollama extracts RMANParams (type, channels, encrypt)</div>
+          <div class="hitl-tag tag-auto">AUTO</div>
+        </div>
+        <div class="hitl-step">
+          <div class="hitl-num gate">⏸</div>
+          <div class="hitl-text">LangGraph interrupt() — graph pauses, state persisted</div>
+          <div class="hitl-tag tag-pause">GATE 1</div>
+        </div>
+        <div class="hitl-step">
+          <div class="hitl-num">3</div>
+          <div class="hitl-text">DBA reviews RMAN script · approves or revises</div>
+          <div class="hitl-tag tag-pause">GATE 2</div>
+        </div>
+        <div class="hitl-step">
+          <div class="hitl-num ok">✓</div>
+          <div class="hitl-text">execute_rman_backup() called post-approval only</div>
+          <div class="hitl-tag tag-resume">EXEC</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 3: Training + Seeded SQL | Architecture nodes ── -->
+  <div class="grid-bottom">
+
+    <!-- Card: Training layer -->
+    <div class="card card-teal">
+      <div class="chip chip-teal">📚 Training Layer</div>
+      <div class="card-title">Oracle Schema Seeding — train_on_oracle_schema()</div>
+      <div class="card-body" style="margin-bottom:10px;">One-time seed populates ChromaDB with Oracle DDL and curated AWR/ASH question–SQL pairs. Every successful live query writes back, creating a self-improving loop.</div>
+      <div class="train-items">
+        <div class="train-row"><span class="train-icon">💾</span><span class="train-label">Capacity · dba_data_files, dba_free_space, dba_tablespaces</span><span class="train-count">3 views</span></div>
+        <div class="train-row"><span class="train-icon">⚡</span><span class="train-label">AWR Performance · dba_hist_sqlstat, dba_hist_snapshot</span><span class="train-count">2 views</span></div>
+        <div class="train-row"><span class="train-icon">👥</span><span class="train-label">Sessions · v$session, v$active_session_history</span><span class="train-count">2 views</span></div>
+        <div class="train-row"><span class="train-icon">🔍</span><span class="train-label">Schema Health · dba_objects, dba_indexes</span><span class="train-count">2 views</span></div>
+        <div class="train-row"><span class="train-icon">📜</span><span class="train-label">Redo & Archive · v$log, v$archive_dest</span><span class="train-count">2 views</span></div>
+      </div>
+    </div>
+
+    <!-- Card: Seeded SQL examples -->
+    <div class="card card-purple">
+      <div class="chip chip-purple">💡 Seeded SQL Examples</div>
+      <div class="card-title">Curated AWR Query Library (verbatim)</div>
+      <div class="sql-list">
+        <div class="sql-item">
+          <div class="sql-q">Show tablespace usage %</div>
+          <div class="sql-code">SELECT t.tablespace_name, ROUND((1-f.free/t.total)*100,2) AS used_pct FROM (SELECT…</div>
+        </div>
+        <div class="sql-item">
+          <div class="sql-q">Top 10 SQL by elapsed time — last AWR snapshot</div>
+          <div class="sql-code">SELECT sql_id, elapsed_time_total FROM dba_hist_sqlstat s JOIN dba_hist_snapshot…</div>
+        </div>
+        <div class="sql-item">
+          <div class="sql-q">Show active blocking sessions right now</div>
+          <div class="sql-code">SELECT blocking_session, sid, serial#, wait_class FROM v$session WHERE blocking…</div>
+        </div>
+        <div class="sql-item">
+          <div class="sql-q">Are there any invalid database objects?</div>
+          <div class="sql-code">SELECT owner, object_name, object_type FROM dba_objects WHERE status='INVALID'…</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text3);">
+        ChromaDB path: <span class="mono" style="font-size:10px;color:var(--purple);">./chroma_db/</span> · Embedding: <span class="mono" style="font-size:10px;color:var(--purple);">all-MiniLM-L6-v2 ONNX</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 4: 4 outcome cards ── -->
+  <div class="grid-foot">
+
+    <div class="card card-blue">
+      <div style="font-size:22px;margin-bottom:8px;">🔒</div>
+      <div class="card-title" style="font-size:13px;">Zero Data Egress</div>
+      <div class="check-list">
+        <div class="check-item"><span class="check-icon">✓</span>LLM runs fully on-device via Ollama</div>
+        <div class="check-item"><span class="check-icon">✓</span>Embeddings computed locally (ONNX)</div>
+        <div class="check-item"><span class="check-icon">✓</span>No OpenAI · No cloud API keys</div>
+      </div>
+    </div>
+
+    <div class="card card-teal">
+      <div style="font-size:22px;margin-bottom:8px;">📈</div>
+      <div class="card-title" style="font-size:13px;">Self-Improving RAG</div>
+      <div class="check-list">
+        <div class="check-item"><span class="check-icon">✓</span>Every successful query added to ChromaDB</div>
+        <div class="check-item"><span class="check-icon">✓</span>Vanna learns enterprise-specific SQL patterns</div>
+        <div class="check-item"><span class="check-icon">✓</span>AWR DDL seeded via DBMS_METADATA.GET_DDL</div>
+      </div>
+    </div>
+
+    <div class="card card-amber">
+      <div style="font-size:22px;margin-bottom:8px;">🏗</div>
+      <div class="card-title" style="font-size:13px;">Production Upgrade Path</div>
+      <div class="check-list">
+        <div class="check-item"><span class="check-icon">✓</span>MemorySaver → PostgresSaver (drop-in)</div>
+        <div class="check-item"><span class="check-icon">✓</span>llama3.1 → SQLCoder 7B for better SQL</div>
+        <div class="check-item"><span class="check-icon">✓</span>WSL Docker → Production Oracle instance</div>
+      </div>
+    </div>
+
+    <div class="card card-coral">
+      <div style="font-size:22px;margin-bottom:8px;">⚙️</div>
+      <div class="card-title" style="font-size:13px;">Governance Built-in</div>
+      <div class="check-list">
+        <div class="check-item"><span class="check-icon">✓</span>Tier 3 ops require explicit human approval</div>
+        <div class="check-item"><span class="check-icon">✓</span>All generated SQL visible and exportable</div>
+        <div class="check-item"><span class="check-icon">✓</span>Revision cycle — script updated on feedback</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Footer bar ── -->
+ <div class="footer-card">
+    <div class="footer-left">
+      <div class="footer-logo">🔮</div>
+      <div>
+        <div style="display: flex; align-items: center;">
+          <div class="footer-name">OmniDBA</div>
+          
+          <div class="evo-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12 3 1.912 5.886L20 10.8l-5.888 1.914L12 18.6l-1.912-5.886L4.2 10.8l5.888-1.914Z"/><path d="M5 3l1.1 2.3L8.3 6.5 6.1 7.6 5 10 3.9 7.6 1.7 6.5 3.9 5.2Z"/><path d="M19 14l1.1 2.3 2.2 1.2-2.2 1.1L19 21l-1.1-2.3-2.2-1.2 2.2-1.1Z"/>
+            </svg>
+            EVOLVING
+          </div>
+        </div>
+        <div class="footer-sub">LangGraph · Ollama llama3.1 · Vanna RAG · Oracle 26ai Free · Streamlit</div>
+      </div>
+    </div>
+
+    <div class="footer-tags">
+      <div class="footer-tag">v1.2</div>
+      <div class="footer-tag">Local Engine</div>
+    </div>
+  </div>
+  </div>
+
+<script>
+/* Auto-resize the Streamlit iframe to exactly match rendered content height.
+   Also fires on window resize and after Google Fonts finishes loading so
+   the height is always correct across all viewport sizes. */
+(function () {
+  'use strict';
+  function fitFrame() {
+    var h = document.documentElement.scrollHeight;
+    if (window.frameElement) {
+      window.frameElement.style.height = (h + 16) + 'px';
+    }
+  }
+  if (window.ResizeObserver) {
+    new ResizeObserver(fitFrame).observe(document.body);
+  }
+  window.addEventListener('resize', fitFrame);
+  window.addEventListener('load',   fitFrame);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitFrame);
+  }
+  fitFrame();
+}());
+</script>
+</body>
+</html>

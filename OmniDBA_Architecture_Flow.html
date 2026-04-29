@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniDBA — Architecture Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #0F172A;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;   /* JS controls scrollability after scaling */
+  color: #F8FAFC;
+}
+
+.canvas {
+  /* Width is overridden by JS at runtime — kept at 1400 px as design baseline */
+  width: 1400px;
+  min-height: 960px;
+  background: radial-gradient(circle at 50% 0%, #1E293B 0%, #0F172A 80%);
+  padding: 40px 48px 48px;
+  position: relative;
+  transform-origin: top left;   /* JS scales from here */
+  flex-shrink: 0;
+}
+
+.canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.header {
+  position: relative;
+  z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 40px;
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-title { font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+.header-title span { color: #60A5FA; text-shadow: 0 0 16px rgba(96,165,250,0.5); }
+.header-sub { font-size: 14px; color: #94A3B8; margin-top: 4px; font-weight: 500; }
+.header-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4);
+  box-shadow: 0 0 20px rgba(34,197,94,0.2);
+  color: #4ADE80; font-size: 13px; font-weight: 700;
+  padding: 8px 16px; border-radius: 100px;
+  backdrop-filter: blur(4px);
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4ADE80;
+  animation: livePulse 2s ease infinite;
+}
+
+.diagram {
+  width: 1304px;
+  height: 880px;
+  position: relative;
+  margin: 0 auto;
+  z-index: 5;
+}
+
+.section-bg {
+  position: absolute;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+  border: 1px solid rgba(255,255,255,0.05);
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.2);
+  pointer-events: none;
+}
+
+.layer-label {
+  position: absolute;
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.flow-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.nd {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border-radius: 16px;
+  width: 150px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  z-index: 20;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeUp 0.6s ease both;
+  cursor: default;
+}
+.nd:hover {
+  transform: translateY(-4px) scale(1.03);
+  z-index: 30;
+}
+
+.nd-logo {
+  width: 52px; height: 52px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 0 12px rgba(255,255,255,0.1);
+}
+.nd-name { font-size: 13px; font-weight: 700; color: #F8FAFC; text-align: center; line-height: 1.3; }
+.nd-sub  { font-size: 11px; color: #CBD5E1; text-align: center; line-height: 1.4; font-weight: 500;}
+
+.n-blue   { border: 2px solid rgba(59,130,246,0.4); box-shadow: 0 8px 32px rgba(59,130,246,0.15); }
+.n-blue:hover { border-color: rgba(59,130,246,0.8); box-shadow: 0 12px 40px rgba(59,130,246,0.3); }
+.n-purple { border: 2px solid rgba(168,85,247,0.4); box-shadow: 0 8px 32px rgba(168,85,247,0.15); }
+.n-purple:hover { border-color: rgba(168,85,247,0.8); box-shadow: 0 12px 40px rgba(168,85,247,0.3); }
+.n-teal   { border: 2px solid rgba(20,184,166,0.4); box-shadow: 0 8px 32px rgba(20,184,166,0.15); }
+.n-teal:hover { border-color: rgba(20,184,166,0.8); box-shadow: 0 12px 40px rgba(20,184,166,0.3); }
+.n-coral  { border: 2px solid rgba(239,68,68,0.4); box-shadow: 0 8px 32px rgba(239,68,68,0.15); }
+.n-coral:hover { border-color: rgba(239,68,68,0.8); box-shadow: 0 12px 40px rgba(239,68,68,0.3); }
+.n-amber  { border: 2px solid rgba(245,158,11,0.4); box-shadow: 0 8px 32px rgba(245,158,11,0.15); }
+.n-amber:hover { border-color: rgba(245,158,11,0.8); box-shadow: 0 12px 40px rgba(245,158,11,0.3); }
+.n-green  { border: 2px solid rgba(34,197,94,0.4); box-shadow: 0 8px 32px rgba(34,197,94,0.15); }
+.n-green:hover { border-color: rgba(34,197,94,0.8); box-shadow: 0 12px 40px rgba(34,197,94,0.3); }
+.n-gray   { border: 2px solid rgba(148,163,184,0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.n-gray:hover { border-color: rgba(148,163,184,0.8); box-shadow: 0 12px 40px rgba(148,163,184,0.3); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes livePulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.4); }
+  50%     { box-shadow: 0 0 0 6px rgba(74,222,128,0); }
+}
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <div class="header">
+    <div class="header-left">
+      <svg width="48" height="48" viewBox="0 0 42 42" fill="none">
+        <rect width="42" height="42" rx="12" fill="#1E3A8A"/>
+        <ellipse cx="21" cy="24" rx="12" ry="8" stroke="#60A5FA" stroke-width="2.5" fill="none"/>
+        <ellipse cx="21" cy="24" rx="5"  ry="8" stroke="#60A5FA" stroke-width="1.5" fill="none" opacity=".7"/>
+        <line x1="9" y1="24" x2="33" y2="24" stroke="#60A5FA" stroke-width="1.5" opacity=".7"/>
+        <path d="M16 13 L21 10 L26 13" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <circle cx="21" cy="10" r="3" fill="#60A5FA"/>
+      </svg>
+      <div>
+        <div class="header-title">Autonomous <span>OmniDBA</span> — Architecture Flow</div>
+        <div class="header-sub">LangGraph · Ollama · Vanna RAG · ChromaDB · Oracle 26ai · Streamlit · Plotly</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram" id="diagram">
+
+    <div class="section-bg" style="left:5px;top:0;width:180px;height:880px;border-top:3px solid rgba(59,130,246,0.5);"></div>
+    <div class="section-bg" style="left:195px;top:0;width:180px;height:880px;border-top:3px solid rgba(168,85,247,0.5);"></div>
+    <div class="section-bg" style="left:470px;top:0;width:420px;height:380px;border-top:3px solid rgba(20,184,166,0.5);"></div>
+    <div class="section-bg" style="left:470px;top:400px;width:420px;height:320px;border-top:3px solid rgba(239,68,68,0.5);"></div>
+    <div class="section-bg" style="left:905px;top:0;width:190px;height:880px;border-top:3px solid rgba(245,158,11,0.5);"></div>
+    <div class="section-bg" style="left:1120px;top:0;width:180px;height:880px;border-top:3px solid rgba(34,197,94,0.5);"></div>
+
+    <div class="layer-label" style="left:15px;top:50px;height:800px;color:rgba(59,130,246,0.4);">User Interface</div>
+    <div class="layer-label" style="left:205px;top:50px;height:800px;color:rgba(168,85,247,0.4);">Orchestration</div>
+    <div class="layer-label" style="left:480px;top:20px;height:340px;color:rgba(20,184,166,0.4);">Diagnostic Pipeline</div>
+    <div class="layer-label" style="left:480px;top:420px;height:280px;color:rgba(239,68,68,0.4);">Backup Pipeline</div>
+    <div class="layer-label" style="left:915px;top:50px;height:800px;color:rgba(245,158,11,0.4);">Data Layer</div>
+    <div class="layer-label" style="left:1130px;top:50px;height:800px;color:rgba(34,197,94,0.4);">Output / State</div>
+
+    <svg class="flow-svg" viewBox="0 0 1304 880" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        
+        <marker id="ah-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M1 1L8 5L1 9" fill="none" stroke="#60A5FA" stroke-width="2" stroke-linecap="round"/>
+        </marker>
+        <marker id="ah-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M1 1L8 5L1 9" fill="none" stroke="#C084FC" stroke-width="2" stroke-linecap="round"/>
+        </marker>
+        <marker id="ah-teal" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M1 1L8 5L1 9" fill="none" stroke="#2DD4BF" stroke-width="2" stroke-linecap="round"/>
+        </marker>
+        <marker id="ah-coral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M1 1L8 5L1 9" fill="none" stroke="#F87171" stroke-width="2" stroke-linecap="round"/>
+        </marker>
+        <marker id="ah-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M1 1L8 5L1 9" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"/>
+        </marker>
+        <marker id="ah-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M1 1L8 5L1 9" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linecap="round"/>
+        </marker>
+        <marker id="ah-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M1 1L8 5L1 9" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
+        </marker>
+      </defs>
+
+      <line x1="95" y1="190" x2="95" y2="240" stroke="#60A5FA" stroke-width="2.5" stroke-dasharray="6 6" marker-end="url(#ah-blue)"/>
+      <circle cx="95" cy="190" r="4" fill="#60A5FA" filter="url(#glow)">
+        <animate attributeName="cy" values="190;240;190" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+      
+      <line x1="95" y1="370" x2="95" y2="420" stroke="#C084FC" stroke-width="2.5" stroke-dasharray="6 6" marker-end="url(#ah-purple)"/>
+      <circle cx="95" cy="370" r="4" fill="#C084FC" filter="url(#glow)">
+        <animate attributeName="cy" values="370;420;370" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+
+      <line x1="170" y1="305" x2="210" y2="305" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#ah-purple)"/>
+      <text x="190" y="295" fill="#CBD5E1" font-size="10" font-family="Inter" text-anchor="middle">state</text>
+
+      <path id="p-diag" d="M 170 485 C 320 485, 320 125, 490 125" fill="none" stroke="#2DD4BF" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#ah-teal)" filter="url(#glow)"/>
+      <circle r="4" fill="#2DD4BF" filter="url(#glow)">
+        <animateMotion dur="2.5s" repeatCount="indefinite">
+          <mpath href="#p-diag"/>
+        </animateMotion>
+      </circle>
+      <text x="325" y="270" fill="#2DD4BF" font-size="12" font-family="Inter" font-weight="700" text-anchor="middle">diagnostic</text>
+
+      <line x1="170" y1="485" x2="490" y2="485" stroke="#F87171" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#ah-coral)"/>
+      <circle cx="170" cy="485" r="4" fill="#F87171" filter="url(#glow)">
+        <animate attributeName="cx" values="170;490;170" dur="2s" repeatCount="indefinite" begin="0.8s"/>
+      </circle>
+      <text x="325" y="475" fill="#F87171" font-size="12" font-family="Inter" font-weight="700" text-anchor="middle">backup</text>
+
+      <line x1="565" y1="190" x2="565" y2="240" stroke="#2DD4BF" stroke-width="2.5" stroke-dasharray="6 6" marker-end="url(#ah-teal)"/>
+      <circle cx="565" cy="190" r="4" fill="#2DD4BF" filter="url(#glow)">
+        <animate attributeName="cy" values="190;240;190" dur="1.8s" repeatCount="indefinite" begin="0.4s"/>
+      </circle>
+      <text x="580" y="220" fill="#2DD4BF" font-size="11" font-family="Inter">embed</text>
+
+      <path id="p-awr" d="M 925 305 C 800 305, 800 125, 640 125" fill="none" stroke="#FBBF24" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#ah-amber)" opacity="0.8" filter="url(#glow)"/>
+      
+      <path id="p-rag" d="M 640 305 C 680 305, 680 215, 720 215" fill="none" stroke="#2DD4BF" stroke-width="2.5" stroke-dasharray="6 6" marker-end="url(#ah-teal)" filter="url(#glow)"/>
+      <text x="675" y="245" fill="#2DD4BF" font-size="11" font-family="Inter" text-anchor="middle">RAG ctx</text>
+
+      <path id="p-sql-ora" d="M 870 215 C 900 215, 900 125, 925 125" fill="none" stroke="#FBBF24" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#ah-amber)" filter="url(#glow)"/>
+      <circle r="4" fill="#FBBF24" filter="url(#glow)">
+        <animateMotion dur="2s" repeatCount="indefinite" begin="0.5s">
+          <mpath href="#p-sql-ora"/>
+        </animateMotion>
+      </circle>
+
+      <line x1="1075" y1="125" x2="1140" y2="125" stroke="#4ADE80" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#ah-green)"/>
+      <circle cx="1075" cy="125" r="4" fill="#4ADE80" filter="url(#glow)">
+        <animate attributeName="cx" values="1075;1140;1075" dur="1.5s" repeatCount="indefinite" begin="0.7s"/>
+      </circle>
+
+      <line x1="1000" y1="420" x2="1000" y2="190" stroke="#60A5FA" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#ah-blue)" opacity="0.8"/>
+
+      <path d="M 1075 845 L 1105 845 L 1105 125 L 1075 125" fill="none" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#ah-gray)" opacity="0.5"/>
+      <text x="1115" y="460" fill="#94A3B8" font-size="10" font-family="Inter" writing-mode="vertical-rl" opacity="0.7">hosts container</text>
+
+      <line x1="565" y1="550" x2="565" y2="600" stroke="#F87171" stroke-width="2.5" stroke-dasharray="6 6" marker-end="url(#ah-coral)"/>
+
+      <line x1="640" y1="665" x2="925" y2="665" stroke="#F87171" stroke-width="2.5" stroke-dasharray="7 7" marker-end="url(#ah-coral)"/>
+      <circle cx="640" cy="665" r="4" fill="#F87171" filter="url(#glow)">
+        <animate attributeName="cx" values="640;925;640" dur="2.5s" repeatCount="indefinite" begin="0.6s"/>
+      </circle>
+
+      <line x1="1075" y1="665" x2="1140" y2="665" stroke="#4ADE80" stroke-width="2.5" stroke-dasharray="6 6" marker-end="url(#ah-green)"/>
+
+      <path d="M 1000 730 C 1000 800, 565 800, 565 730" fill="none" stroke="#F87171" stroke-width="1.5" stroke-dasharray="4 6" marker-end="url(#ah-coral)" opacity="0.8"/>
+      <text x="780" y="790" fill="#F87171" font-size="11" font-family="Inter" text-anchor="middle" font-weight="600">revision loop</text>
+
+    </svg>
+
+    <div class="nd n-blue" style="left:20px; top:60px; animation-delay:0.05s;">
+      <div class="nd-logo" style="background:rgba(255,75,75,0.15);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M16 4L30 22H2L16 4Z" fill="#FF4B4B"/>
+          <path d="M4 22L16 14L28 22H4Z" fill="#FF4B4B" opacity="0.4"/>
+          <path d="M8 22L16 18L24 22" fill="#FF4B4B"/>
+        </svg>
+      </div>
+      <div class="nd-name">Streamlit UI</div>
+      <div class="nd-sub">app.py · I/O</div>
+    </div>
+
+    <div class="nd n-purple" style="left:20px; top:240px; animation-delay:0.1s;">
+      <div class="nd-logo" style="background:rgba(168,85,247,0.15);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="8"  cy="8"  r="5" fill="#C084FC"/>
+          <circle cx="24" cy="8"  r="5" fill="#C084FC" opacity="0.6"/>
+          <circle cx="16" cy="24" r="5" fill="#C084FC" opacity="0.4"/>
+          <line x1="13" y1="8"  x2="19" y2="8"  stroke="#C084FC" stroke-width="2"/>
+          <line x1="10" y1="12" x2="14" y2="20" stroke="#C084FC" stroke-width="2"/>
+          <line x1="22" y1="12" x2="18" y2="20" stroke="#C084FC" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="nd-name">LangGraph</div>
+      <div class="nd-sub">State machine · 1.x</div>
+    </div>
+
+    <div class="nd n-gray" style="left:210px; top:240px; animation-delay:0.12s;">
+      <div class="nd-logo" style="background:rgba(148,163,184,0.15); width:44px; height:44px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="6" width="18" height="12" rx="3" stroke="#CBD5E1" stroke-width="1.5" fill="none"/>
+          <rect x="7" y="10" width="10" height="2" rx="1" fill="#CBD5E1"/>
+          <rect x="7" y="14" width="6" height="2"  rx="1" fill="#CBD5E1" opacity="0.5"/>
+          <circle cx="19" cy="7" r="3" fill="#C084FC" stroke="#0F172A" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="nd-name">MemorySaver</div>
+      <div class="nd-sub">HITL state check</div>
+    </div>
+
+    <div class="nd n-purple" style="left:20px; top:420px; animation-delay:0.15s;">
+      <div class="nd-logo" style="background:rgba(255,255,255,0.08);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <ellipse cx="16" cy="20" rx="8" ry="7" fill="white"/>
+          <ellipse cx="11" cy="14" rx="4" ry="5.5" fill="white"/>
+          <ellipse cx="21" cy="14" rx="4" ry="5.5" fill="white"/>
+          <ellipse cx="11" cy="12" rx="2" ry="3" fill="#0F172A"/>
+          <ellipse cx="21" cy="12" rx="2" ry="3" fill="#0F172A"/>
+          <path d="M13 22 Q16 25 19 22" fill="none" stroke="#0F172A" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="nd-name">Ollama</div>
+      <div class="nd-sub">Intent Router · JSON</div>
+    </div>
+
+    <div class="nd n-teal" style="left:490px; top:60px; animation-delay:0.2s;">
+      <div class="nd-logo" style="background:rgba(20,184,166,0.15);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M6 8L16 26L26 8" fill="none" stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M10 8L16 20L22 8" fill="none" stroke="#2DD4BF" stroke-width="1.5" opacity="0.5"/>
+          <circle cx="16" cy="8" r="3" fill="#2DD4BF"/>
+        </svg>
+      </div>
+      <div class="nd-name">Vanna.ai</div>
+      <div class="nd-sub">NL2SQL · Legacy API</div>
+    </div>
+
+    <div class="nd n-teal" style="left:490px; top:240px; animation-delay:0.25s;">
+      <div class="nd-logo" style="background:rgba(20,184,166,0.15);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M26 16A10 10 0 1 1 16 6" stroke="#F472B6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <path d="M26 16A10 10 0 0 1 19.5 24.7" stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="16" cy="16" r="5" fill="none" stroke="#C084FC" stroke-width="2"/>
+          <circle cx="16" cy="16" r="2" fill="#60A5FA"/>
+        </svg>
+      </div>
+      <div class="nd-name">ChromaDB</div>
+      <div class="nd-sub">Vector store · ONNX</div>
+    </div>
+
+    <div class="nd n-teal" style="left:720px; top:150px; animation-delay:0.3s;">
+      <div class="nd-logo" style="background:rgba(255,255,255,0.08);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <ellipse cx="16" cy="20" rx="8" ry="7" fill="white"/>
+          <ellipse cx="11" cy="14" rx="4" ry="5.5" fill="white"/>
+          <ellipse cx="21" cy="14" rx="4" ry="5.5" fill="white"/>
+          <ellipse cx="11" cy="12" rx="2" ry="3" fill="#0F172A"/>
+          <ellipse cx="21" cy="12" rx="2" ry="3" fill="#0F172A"/>
+        </svg>
+      </div>
+      <div class="nd-name">Ollama · SQL Gen</div>
+      <div class="nd-sub">llama3.1 · gen SQL</div>
+    </div>
+
+    <div class="nd n-coral" style="left:490px; top:420px; animation-delay:0.25s;">
+      <div class="nd-logo" style="background:rgba(239,68,68,0.15);">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+          <rect x="6" y="10" width="14" height="8" rx="4" stroke="#F87171" stroke-width="2.5"/>
+          <rect x="12" y="14" width="14" height="8" rx="4" stroke="#F87171" stroke-width="2.5" fill="#0F172A"/>
+        </svg>
+      </div>
+      <div class="nd-name">LangChain Ollama</div>
+      <div class="nd-sub">Parse NL → Params</div>
+    </div>
+
+    <div class="nd n-coral" style="left:490px; top:600px; animation-delay:0.3s;">
+      <div class="nd-logo" style="background:rgba(239,68,68,0.15);">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+          <rect x="4" y="4" width="24" height="24" rx="4" stroke="#F87171" stroke-width="1.5" fill="none"/>
+          <path d="M10 11L7 16L10 21" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M22 11L25 16L22 21" stroke="#F87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="14" y1="9" x2="18" y2="23" stroke="#F87171" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="nd-name">RMAN Script Gen</div>
+      <div class="nd-sub">Deterministic block</div>
+    </div>
+
+    <div class="nd n-amber" style="left:925px; top:60px; animation-delay:0.35s;">
+      <div class="nd-logo" style="background:rgba(220,38,38,0.2);">
+        <svg width="36" height="28" viewBox="0 0 80 36" fill="none">
+          <ellipse cx="22" cy="18" rx="18" ry="16" fill="#EF4444"/>
+          <ellipse cx="58" cy="18" rx="18" ry="16" fill="#EF4444"/>
+          <rect x="22" y="2" width="36" height="32" fill="#EF4444"/>
+          <ellipse cx="22" cy="18" rx="9" ry="8" fill="#0F172A"/>
+          <ellipse cx="58" cy="18" rx="9" ry="8" fill="#0F172A"/>
+          <rect x="22" y="10" width="36" height="16" fill="#0F172A"/>
+        </svg>
+      </div>
+      <div class="nd-name">Oracle 26ai Free</div>
+      <div class="nd-sub">FREEPDB1 · WSL2</div>
+    </div>
+
+    <div class="nd n-amber" style="left:925px; top:240px; animation-delay:0.38s;">
+      <div class="nd-logo" style="background:rgba(245,158,11,0.15);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <rect x="4" y="6" width="24" height="20" rx="3" stroke="#FBBF24" stroke-width="1.5" fill="none"/>
+          <line x1="4" y1="12" x2="28" y2="12" stroke="#FBBF24" stroke-width="1.5" opacity="0.6"/>
+          <line x1="4" y1="18" x2="28" y2="18" stroke="#FBBF24" stroke-width="1.5" opacity="0.6"/>
+          <line x1="12" y1="6"  x2="12" y2="26" stroke="#FBBF24" stroke-width="1.5" opacity="0.4"/>
+          <circle cx="24" cy="24" r="6" fill="#0F172A" stroke="#FBBF24" stroke-width="1.5"/>
+          <path d="M21 24l2 2 4-4" stroke="#4ADE80" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="nd-name">AWR / ASH Views</div>
+      <div class="nd-sub">v$session · dba_hist_*</div>
+    </div>
+
+    <div class="nd n-blue" style="left:925px; top:420px; animation-delay:0.4s;">
+      <div class="nd-logo" style="background:rgba(59,130,246,0.15);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M16 4C10 4 9 7 9 9V12H16V13H6C4 13 2 15 2 18C2 21 4 23 6 23H9V20C9 18 10.5 16 13 16H19C21 16 23 14.5 23 12V9C23 7 21 4 16 4Z" fill="#60A5FA"/>
+          <path d="M16 28C22 28 23 25 23 23V20H16V19H26C28 19 30 17 30 14C30 11 28 9 26 9H23V12C23 14 21.5 16 19 16H13C11 16 9 17.5 9 20V23C9 25 11 28 16 28Z" fill="#FCD34D"/>
+        </svg>
+      </div>
+      <div class="nd-name">python-oracledb</div>
+      <div class="nd-sub">Thin mode driver</div>
+    </div>
+
+    <div class="nd n-coral" style="left:925px; top:600px; animation-delay:0.42s;">
+      <div class="nd-logo" style="background:rgba(239,68,68,0.15);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="12" stroke="#F87171" stroke-width="2" fill="none"/>
+          <rect x="11" y="11" width="3" height="10" rx="1" fill="#F87171"/>
+          <rect x="18" y="11" width="3" height="10" rx="1" fill="#F87171"/>
+        </svg>
+      </div>
+      <div class="nd-name">HITL Gate</div>
+      <div class="nd-sub">interrupt() · pause</div>
+    </div>
+
+    <div class="nd n-gray" style="left:925px; top:780px; animation-delay:0.45s;">
+      <div class="nd-logo" style="background:rgba(14,165,233,0.15); width:44px; height:44px;">
+        <svg width="26" height="22" viewBox="0 0 56 44" fill="none">
+          <rect x="6"  y="22" width="8" height="6" rx="1" fill="#38BDF8"/>
+          <rect x="16" y="22" width="8" height="6" rx="1" fill="#38BDF8"/>
+          <rect x="26" y="22" width="8" height="6" rx="1" fill="#38BDF8"/>
+          <rect x="36" y="22" width="8" height="6" rx="1" fill="#38BDF8"/>
+          <rect x="16" y="14" width="8" height="6" rx="1" fill="#38BDF8"/>
+          <rect x="26" y="14" width="8" height="6" rx="1" fill="#38BDF8"/>
+          <rect x="26" y="6"  width="8" height="6" rx="1" fill="#38BDF8"/>
+          <path d="M50 22C50 22 48 18 44 20C43 16 38 15 36 18H6C4 18 2 22 4 26C6 33 14 36 22 36H38C44 36 52 32 50 22Z" fill="#38BDF8" opacity="0.8"/>
+        </svg>
+      </div>
+      <div class="nd-name">Docker · WSL2</div>
+      <div class="nd-sub">Container runtime</div>
+    </div>
+
+    <div class="nd n-green" style="left:1140px; top:60px; animation-delay:0.5s;">
+      <div class="nd-logo" style="background:rgba(0,0,0,0.25); width:64px; height:44px; gap:8px; flex-direction:row;">
+        <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+          <path d="M16 4L30 22H2L16 4Z" fill="#FF4B4B"/>
+          <path d="M4 22L16 14L28 22H4Z" fill="#FF4B4B" opacity="0.5"/>
+          <path d="M8 22L16 18L24 22" fill="#FF4B4B"/>
+        </svg>
+        <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+          <rect x="4"  y="20" width="6" height="8" rx="1.5" fill="#818CF8"/>
+          <rect x="13" y="12" width="6" height="16" rx="1.5" fill="#38BDF8"/>
+          <rect x="22" y="6"  width="6" height="22" rx="1.5" fill="#818CF8" opacity="0.7"/>
+          <line x1="2" y1="28" x2="30" y2="28" stroke="#4ADE80" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="nd-name">Results Dashboard</div>
+      <div class="nd-sub">Table · Charts · Export</div>
+    </div>
+
+    <div class="nd n-green" style="left:1140px; top:600px; animation-delay:0.55s;">
+      <div class="nd-logo" style="background:rgba(34,197,94,0.15);">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="12" stroke="#4ADE80" stroke-width="2" fill="none"/>
+          <path d="M10 16l4 4 8-8" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="nd-name">Approval Panel</div>
+      <div class="nd-sub">Approve / Reject UI</div>
+    </div>
+
+  </div>
+
+  <div style="display:flex; align-items:center; gap:24px; margin-top:32px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.08);">
+    <div style="font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:#CBD5E1;">Legend</div>
+    <div style="display:flex; align-items:center; gap:8px;"><div style="width:24px; height:3px; background:#2DD4BF; box-shadow:0 0 8px #2DD4BF;"></div><span style="font-size:12px; color:#94A3B8;">Diagnostic Flow</span></div>
+    <div style="display:flex; align-items:center; gap:8px;"><div style="width:24px; height:3px; background:#F87171; box-shadow:0 0 8px #F87171;"></div><span style="font-size:12px; color:#94A3B8;">Backup Flow</span></div>
+    <div style="display:flex; align-items:center; gap:8px;"><div style="width:24px; height:3px; background:#C084FC; box-shadow:0 0 8px #C084FC;"></div><span style="font-size:12px; color:#94A3B8;">Orchestration</span></div>
+    <div style="display:flex; align-items:center; gap:8px;"><div style="width:24px; height:3px; background:#FBBF24; box-shadow:0 0 8px #FBBF24;"></div><span style="font-size:12px; color:#94A3B8;">Data Execution</span></div>
+    <div style="display:flex; align-items:center; gap:8px;"><div style="width:24px; height:3px; background:#4ADE80; box-shadow:0 0 8px #4ADE80;"></div><span style="font-size:12px; color:#94A3B8;">Output / State</span></div>
+  </div>
+
+</div>
+
+<script>
+/* Scale-to-fit: shrinks the 1400 px design canvas proportionally so it fills
+   any viewport — laptop, tablet, mobile, or 40-inch monitor — without
+   clipping or horizontal scroll.  On large screens (≥ 1400 px) it renders
+   at full size.  The Streamlit iframe is resized from within so no extra
+   whitespace appears below the diagram. */
+(function () {
+  'use strict';
+  var DESIGN_W = 1400;
+  var canvas   = document.querySelector('.canvas');
+  var body     = document.body;
+
+  function scaleAndFit() {
+    var vw    = document.documentElement.clientWidth;
+    var scale = Math.min(1, vw / DESIGN_W);
+
+    if (scale < 1) {
+      canvas.style.transform    = 'scale(' + scale + ')';
+      body.style.justifyContent = 'flex-start'; /* don't centre a shrunken canvas */
+    } else {
+      canvas.style.transform    = '';
+      body.style.justifyContent = 'center';
+    }
+
+    /* Collapse body to the visual (scaled) height so no dead space remains */
+    var scaledH = Math.round(canvas.scrollHeight * scale);
+    body.style.minHeight = scaledH + 'px';
+    body.style.height    = scaledH + 'px';
+
+    /* Resize the Streamlit iframe from within (same-origin allows this) */
+    if (window.frameElement) {
+      window.frameElement.style.height = (scaledH + 16) + 'px';
+    }
+  }
+
+  window.addEventListener('resize', scaleAndFit);
+  window.addEventListener('load',   scaleAndFit);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(scaleAndFit);
+  }
+  scaleAndFit();
+}());
+</script>
+</body>
+</html>

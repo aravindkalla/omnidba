@@ -1,0 +1,9 @@
+# Additional packages for the FastAPI mobile backend (api.py)
+# Install with:  pip install -r requirements-api.txt
+#
+# These are separate from requirements.txt so the existing Streamlit app
+# is not affected.  Both files share the same venv.
+
+fastapi==0.115.12
+python-jose[cryptography]==3.3.0
+APScheduler==3.10.4

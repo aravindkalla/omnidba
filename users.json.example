@@ -1,0 +1,16 @@
+{
+  "admin@omnidba.local": {
+    "email": "admin@omnidba.local",
+    "hashed_password": "<bcrypt hash — generate with create_user.py>",
+    "is_active": true,
+    "role": "admin",
+    "must_change_password": true
+  },
+  "dba@your-domain.com": {
+    "email": "dba@your-domain.com",
+    "hashed_password": "<bcrypt hash — generate with create_user.py>",
+    "is_active": true,
+    "role": "dba",
+    "must_change_password": true
+  }
+}

@@ -1,0 +1,44 @@
+# ── Secrets — never commit ────────────────────────────────────────────────────
+.env
+push_tokens.json
+
+# ── Runtime / process files ───────────────────────────────────────────────────
+*.pid
+nohup.out
+logs/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# ── ChromaDB vector store ─────────────────────────────────────────────────────
+# Large binary files — regenerate on target machine with: startup.sh train
+chroma_db/
+
+# ── SSL certificates ──────────────────────────────────────────────────────────
+*.key
+*.crt
+
+# ── User data ─────────────────────────────────────────────────────────────────
+# Contains real email addresses + bcrypt hashes — use users.json.example as template
+users.json
+
+# ── Mobile / Node ─────────────────────────────────────────────────────────────
+mobile/node_modules/
+mobile/.expo/
+mobile/.expo-shared/
+mobile/dist/
+mobile/.cache/
+mobile/web-build/
+
+# ── OS / editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
