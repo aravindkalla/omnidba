@@ -273,7 +273,7 @@ def render_diagnostic_result(result: dict) -> None:
             return f"background-color: {color}22; color: {color}; font-weight: bold"
 
         st.dataframe(
-            df.style.format(format_dict).applymap(_pct_bar, subset=[pct_col]),
+            df.style.format(format_dict).map(_pct_bar, subset=[pct_col]),
             use_container_width=True,
         )
 
