@@ -1,0 +1,22 @@
+# OmniDBA v3 (GCP/Vertex) — installed into .venv-gcp only, never v1's .venv.
+# --- shared with v1 (pinned loosely; resolved fresh in the isolated venv) ---
+langgraph
+langchain-core
+langchain-ollama
+vanna
+chromadb
+oracledb
+streamlit
+fastapi
+uvicorn
+python-jose[cryptography]
+python-dotenv
+# --- GCP additions ---
+langchain-google-vertexai
+google-cloud-aiplatform
+google-cloud-tasks
+google-cloud-logging
+google-cloud-bigquery
+google-cloud-secret-manager
+# --- multi-DB ---
+psycopg[binary]

@@ -1,6 +1,8 @@
 # ── Secrets — never commit ────────────────────────────────────────────────────
 .env
 push_tokens.json
+# GCP runtime service-account key (build-day handoff)
+omnidba-sa.json
 
 # ── Runtime / process files ───────────────────────────────────────────────────
 *.pid
@@ -9,6 +11,9 @@ logs/
 
 # ── Python ────────────────────────────────────────────────────────────────────
 .venv/
+# v3 GCP worktree virtualenv (isolated from v1) + pip install transcript
+.venv-gcp/
+logs_pipinstall.txt
 __pycache__/
 *.pyc
 *.pyo
@@ -20,6 +25,9 @@ build/
 # ── ChromaDB vector store ─────────────────────────────────────────────────────
 # Large binary files — regenerate on target machine with: startup.sh train
 chroma_db/
+# v3 RAG stores (Oracle + Postgres)
+chroma_db_gcp/
+chroma_db_pg/
 
 # ── SSL certificates ──────────────────────────────────────────────────────────
 *.key
@@ -42,3 +50,5 @@ mobile/web-build/
 Thumbs.db
 .vscode/
 .idea/
+.pgpw
+sa-key.json
