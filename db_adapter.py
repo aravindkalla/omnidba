@@ -209,9 +209,12 @@ _ADAPTERS: dict[str, type[DBAdapter]] = {
 }
 
 
-def get_adapter() -> DBAdapter:
-    """Return the adapter selected by DB_ENGINE (default 'oracle')."""
-    engine = os.getenv("DB_ENGINE", "oracle").lower()
+def get_adapter(engine: str | None = None) -> DBAdapter:
+    """Return the adapter for `engine`, or the DB_ENGINE default (oracle).
+
+    Passing `engine` explicitly lets the UI build adapters for a backend other
+    than the process default (the live Oracle↔Postgres toggle)."""
+    engine = (engine or os.getenv("DB_ENGINE", "oracle")).lower()
     try:
         return _ADAPTERS[engine]()
     except KeyError:

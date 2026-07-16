@@ -16,17 +16,31 @@ import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
 from langgraph.types import Command
-from orchestrator import app as lg_app
+from orchestrator import build_app
+import model_armor
 
 # ---------------------------------------------------------------------------
 # Page config
 # ---------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Oracle AI DBA",
+    page_title="OmniDBA",
     page_icon="🗄️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ---------------------------------------------------------------------------
+# Backend catalogue — the Omni-channel selectors
+# ---------------------------------------------------------------------------
+PROVIDERS = {
+    "vertex": "☁️ Vertex · Gemini 2.5",
+    "ollama": "🔒 Ollama · local (air-gapped)",
+}
+ENGINES = {
+    "oracle":   "🟠 Oracle 26ai",
+    "postgres": "🐘 PostgreSQL 16",
+}
+UI_USER = os.getenv("DEMO_USER", "omnidba-ui")
 
 # ---------------------------------------------------------------------------
 # Session state bootstrap
@@ -37,6 +51,10 @@ if "messages"   not in st.session_state:
     st.session_state.messages   = []   # list of {role, content, result}
 if "last_result" not in st.session_state:
     st.session_state.last_result = None
+if "provider" not in st.session_state:
+    st.session_state.provider = os.getenv("LLM_PROVIDER", "vertex").lower()
+if "engine" not in st.session_state:
+    st.session_state.engine = os.getenv("DB_ENGINE", "oracle").lower()
 
 config = {"configurable": {"thread_id": st.session_state.thread_id}}
 
@@ -68,25 +86,48 @@ def _load_html(filename: str) -> str:
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
+def _reset_conversation() -> None:
+    st.session_state.thread_id   = str(uuid.uuid4())
+    st.session_state.messages    = []
+    st.session_state.last_result = None
+
+
 with st.sidebar:
-    st.header("🗄️ Oracle AI DBA")
+    st.header("🗄️ OmniDBA")
     page = st.radio(
         "Navigate",
-        ["💬 Chat", "🏗️ Architecture"],
+        ["💬 Chat", "📊 Governance", "🏗️ Architecture"],
         label_visibility="collapsed",
     )
     st.divider()
 
-    # Connection badge
-    oracle_dsn  = os.getenv("ORACLE_DSN",  "localhost:1521/FREEPDB1")
-    oracle_user = os.getenv("ORACLE_USER", "system")
-    st.markdown("**Database Connection**")
-    st.success(f"🟢 {oracle_user}@{oracle_dsn}")
+    # ── Omni-channel backend selectors ───────────────────────────────────────
+    st.markdown("**Backend** — switch live")
+    new_provider = st.selectbox(
+        "LLM", list(PROVIDERS), key="provider",
+        format_func=lambda p: PROVIDERS[p],
+    )
+    new_engine = st.selectbox(
+        "Database", list(ENGINES), key="engine",
+        format_func=lambda e: ENGINES[e],
+    )
 
-    # Model badge
-    model = os.getenv("OLLAMA_MODEL", "llama3.1")
-    st.markdown("**LLM / Embedding**")
-    st.info(f"⚡ Ollama · {model}\n\n🔍 all-MiniLM-L6-v2 (ONNX)")
+    # Switching backend mid-thread would leave stale checkpoint/interrupt state
+    # on the previous graph, so reset the conversation on any change.
+    if st.session_state.get("_active_backend") not in (None, (new_provider, new_engine)):
+        _reset_conversation()
+    st.session_state._active_backend = (new_provider, new_engine)
+
+    if new_provider == "ollama":
+        st.success("🔒 Air-gapped — no external calls")
+        st.caption("🛡️ Model Armor: skipped (air-gapped path)")
+    else:
+        st.info("☁️ Gemini 2.5 · Flash routing / Pro SQL")
+        ma = model_armor.status()
+        if model_armor.enabled():
+            st.caption(f"🛡️ Model Armor: **{ma['mode']}** · `{ma['template']}`")
+        else:
+            st.caption("🛡️ Model Armor: off")
 
     st.divider()
 
@@ -94,10 +135,8 @@ with st.sidebar:
     st.markdown("**Conversation**")
     st.caption(f"Thread: `{st.session_state.thread_id[:8]}…`")
 
-    if st.button("🗑️ New Conversation", use_container_width=True):
-        st.session_state.thread_id   = str(uuid.uuid4())
-        st.session_state.messages    = []
-        st.session_state.last_result = None
+    if st.button("🗑️ New Conversation", width="stretch"):
+        _reset_conversation()
         st.rerun()
 
     if st.session_state.messages:
@@ -108,7 +147,15 @@ with st.sidebar:
             st.caption(f"{role_icon} {label}")
 
     st.divider()
-    st.caption("Stack: LangGraph · Vanna · ChromaDB · Ollama · Oracle 26ai")
+    st.caption("Stack: LangGraph · Vanna · ChromaDB · Vertex/Ollama · Oracle/Postgres")
+
+
+# ---------------------------------------------------------------------------
+# Compile (cached) the graph for the selected backend
+# ---------------------------------------------------------------------------
+provider = st.session_state.provider
+engine   = st.session_state.engine
+lg_app   = build_app(provider, engine)
 
 
 # ---------------------------------------------------------------------------
@@ -252,7 +299,7 @@ def render_diagnostic_result(result: dict) -> None:
         badge_cols[2].metric("🟢 Healthy (<75%)", len(healthy))
 
         # Bar chart
-        st.plotly_chart(_usage_chart(df, pct_col, name_col), use_container_width=True, key=f"usage_chart_{id(df)}")
+        st.plotly_chart(_usage_chart(df, pct_col, name_col), width="stretch", key=f"usage_chart_{id(df)}")
 
         # Alerts
         if critical:
@@ -274,14 +321,14 @@ def render_diagnostic_result(result: dict) -> None:
 
         st.dataframe(
             df.style.format(format_dict).map(_pct_bar, subset=[pct_col]),
-            use_container_width=True,
+            width="stretch",
         )
 
     # ── SQL performance view ─────────────────────────────────────────────────
     elif elapsed_col:
         st.markdown(f"### Top SQL by Elapsed Time — *{row_label}*")
-        st.plotly_chart(_elapsed_chart(df, elapsed_col, name_col), use_container_width=True, key=f"elapsed_chart_{id(df)}")
-        st.dataframe(df, use_container_width=True)
+        st.plotly_chart(_elapsed_chart(df, elapsed_col, name_col), width="stretch", key=f"elapsed_chart_{id(df)}")
+        st.dataframe(df, width="stretch")
 
     # ── Generic table (blocking sessions, invalid objects, etc.) ────────────
     else:
@@ -296,9 +343,9 @@ def render_diagnostic_result(result: dict) -> None:
                 if val in ("INVALID", "BLOCKED", "WAITING"):
                     return ["background-color: #5c1a1a"] * len(row)
                 return [""] * len(row)
-            st.dataframe(df.style.apply(_row_style, axis=1), use_container_width=True)
+            st.dataframe(df.style.apply(_row_style, axis=1), width="stretch")
         else:
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df, width="stretch")
 
     # ── CSV export ───────────────────────────────────────────────────────────
     csv = df.to_csv(index=False).encode("utf-8")
@@ -342,13 +389,13 @@ def render_hitl_panel() -> None:
             {"Parameter": k, "Value": str(v)}
             for k, v in params.items()
         ])
-        st.dataframe(p_df, use_container_width=True, hide_index=True)
+        st.dataframe(p_df, width="stretch", hide_index=True)
 
     st.divider()
     col_approve, col_reject, col_revise = st.columns([1, 1, 2])
 
     with col_approve:
-        if st.button("✅ Approve Execution", type="primary", use_container_width=True):
+        if st.button("✅ Approve Execution", type="primary", width="stretch"):
             with st.spinner("Executing approved backup…"):
                 res = lg_app.invoke(Command(resume="approve"), config=config)
             st.session_state.last_result = res
@@ -360,7 +407,7 @@ def render_hitl_panel() -> None:
             st.rerun()
 
     with col_reject:
-        if st.button("❌ Reject / Abort", use_container_width=True):
+        if st.button("❌ Reject / Abort", width="stretch"):
             with st.spinner("Aborting…"):
                 res = lg_app.invoke(Command(resume="reject"), config=config)
             st.session_state.last_result = res
@@ -377,7 +424,7 @@ def render_hitl_panel() -> None:
             placeholder="e.g. Use 4 channels and delay by 2 hours",
             key="revision_input",
         )
-        if st.button("🔄 Submit Revision", use_container_width=True) and revision:
+        if st.button("🔄 Submit Revision", width="stretch") and revision:
             with st.spinner("Revising plan…"):
                 res = lg_app.invoke(Command(resume=revision), config=config)
             st.session_state.last_result = res
@@ -390,8 +437,93 @@ def render_hitl_panel() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Governance panel — live BigQuery audit trail
+# ---------------------------------------------------------------------------
+
+@st.cache_data(ttl=15, show_spinner=False)
+def _fetch_audit(project: str, dataset: str):
+    from google.cloud import bigquery
+    c = bigquery.Client(project=project)
+    recent = [dict(r) for r in c.query(f"""
+        SELECT FORMAT_TIMESTAMP('%H:%M:%S', ts) AS time, engine, provider, intent,
+               row_count, latency_ms, error, SUBSTR(query, 1, 60) AS query
+        FROM `{project}.{dataset}.turns` ORDER BY ts DESC LIMIT 25""").result()]
+    rollup = [dict(r) for r in c.query(f"""
+        SELECT engine, provider, COUNT(*) AS turns,
+               SUM(CAST(error AS INT64)) AS errors, ROUND(AVG(latency_ms)) AS avg_ms
+        FROM `{project}.{dataset}.turns`
+        GROUP BY engine, provider ORDER BY engine, provider""").result()]
+    return recent, rollup
+
+
+def render_governance() -> None:
+    st.markdown("## 📊 Governance — BigQuery Audit Trail")
+    st.caption("Every NL→SQL turn is logged to BigQuery `omnidba_audit.turns` for "
+               "observability & compliance — across all backends.")
+
+    project = os.getenv("GCP_PROJECT")
+    dataset = os.getenv("BQ_AUDIT_DATASET", "omnidba_audit")
+    if not project:
+        st.info("No `GCP_PROJECT` set — audit sink disabled (fully air-gapped mode).")
+        return
+    try:
+        recent, rollup = _fetch_audit(project, dataset)
+    except Exception as e:  # noqa: BLE001
+        st.warning(f"Could not read the audit table: {e}")
+        return
+    if not recent:
+        st.info("No audited turns yet — ask something in the 💬 Chat tab.")
+        return
+
+    total = sum(r["turns"] for r in rollup)
+    errs  = sum((r["errors"] or 0) for r in rollup)
+    m = st.columns(4)
+    m[0].metric("Total turns", total)
+    m[1].metric("Errors", errs)
+    m[2].metric("Engines used", len({r["engine"] for r in rollup}))
+    m[3].metric("Providers used", len({r["provider"] for r in rollup}))
+
+    st.markdown("#### Backend rollup — engine × provider")
+    st.dataframe(pd.DataFrame(rollup), width="stretch", hide_index=True)
+
+    st.markdown("#### Recent turns")
+    st.dataframe(pd.DataFrame(recent), width="stretch", hide_index=True)
+
+    if st.button("🔄 Refresh", key="gov_refresh"):
+        _fetch_audit.clear()
+        st.rerun()
+
+
+def render_blocked(result: dict) -> None:
+    """Render a Model-Armor-blocked prompt as a security banner."""
+    st.error(f"🛡️ {result.get('final_result', 'Blocked by security policy.')}")
+    st.caption("Model Armor screened this prompt (prompt-injection / jailbreak / PII) "
+               "before it reached the LLM or the database.")
+
+
+def render_guard_notice(result: dict) -> None:
+    """Flagged-but-allowed (monitor mode): show a non-blocking security notice."""
+    findings = result.get("guard_findings") or []
+    if findings and not result.get("blocked"):
+        st.caption(f"🛡️ Security notice — flagged: {', '.join(findings)}")
+
+
+def render_backend_badge() -> None:
+    """Always-visible banner of the active backend."""
+    prov = ("🔒 Ollama — air-gapped local LLM" if provider == "ollama"
+            else "☁️ Vertex · Gemini 2.5 — Flash routing / Pro SQL")
+    left, right = st.columns(2)
+    left.markdown(f"**LLM:** {prov}")
+    right.markdown(f"**Database:** {ENGINES[engine]}")
+
+
+# ---------------------------------------------------------------------------
 # Main — chat interface
 # ---------------------------------------------------------------------------
+
+if page == "📊 Governance":
+    render_governance()
+    st.stop()
 
 # ---------------------------------------------------------------------------
 # Architecture page — rendered before the chat section; st.stop() prevents
@@ -459,6 +591,7 @@ if page == "🏗️ Architecture":
 # ---------------------------------------------------------------------------
 st.markdown("## 🗄️ OmniDBA")
 st.caption("Ask in plain English — diagnostic queries run instantly; backup requests go through DBA approval.")
+render_backend_badge()
 st.divider()
 
 # Render existing conversation history
@@ -466,8 +599,11 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar="🧑" if msg["role"] == "user" else "🤖"):
         st.write(msg["content"])
         result = msg.get("result")
-        if result and result.get("user_intent") == "diagnostic":
+        if result and result.get("blocked"):
+            render_blocked(result)
+        elif result and result.get("user_intent") == "diagnostic":
             render_diagnostic_result(result)
+            render_guard_notice(result)
         elif result and result.get("final_result") and result.get("user_intent") == "backup":
             status = result["final_result"]
             if "SUCCEEDED" in status:
@@ -497,7 +633,7 @@ chip_cols = st.columns(len(QUICK_PROMPTS))
 quick_input = None
 for col, (label, prompt) in zip(chip_cols, QUICK_PROMPTS):
     with col:
-        if st.button(label, use_container_width=True, key=f"chip_{label}"):
+        if st.button(label, width="stretch", key=f"chip_{label}"):
             quick_input = prompt
 
 # ── Chat input ────────────────────────────────────────────────────────────
@@ -519,13 +655,16 @@ if final_input:
 
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Thinking…"):
-            result = lg_app.invoke({"query": final_input}, config=config)
+            result = lg_app.invoke({"query": final_input, "user": UI_USER}, config=config)
         st.session_state.last_result = result
 
         intent = result.get("user_intent", "")
-        if intent == "diagnostic":
+        if result.get("blocked"):
+            render_blocked(result)
+        elif intent == "diagnostic":
             st.write(result.get("final_result", ""))
             render_diagnostic_result(result)
+            render_guard_notice(result)
         elif intent == "backup":
             # Backup may have paused at interrupt — HITL panel handles it
             final = result.get("final_result", "")

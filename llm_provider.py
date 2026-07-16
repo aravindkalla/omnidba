@@ -43,12 +43,17 @@ _ROUTER_MODEL = os.getenv("GEMINI_ROUTER_MODEL", "gemini-2.5-flash")
 _SQL_MODEL    = os.getenv("GEMINI_SQL_MODEL",    "gemini-2.5-pro")
 
 
-def get_chat_llm(*, json_mode: bool = False, temperature: float = 0):
+def get_chat_llm(*, provider: str | None = None,
+                 json_mode: bool = False, temperature: float = 0):
     """
-    Return a LangChain chat model for the configured provider.
+    Return a LangChain chat model for the given (or configured) provider.
 
     Parameters
     ----------
+    provider : str | None
+        "ollama" | "vertex". None → the LLM_PROVIDER env default. Passing it
+        explicitly lets the UI build a model for a backend other than the
+        process default (the live Vertex↔Ollama toggle).
     json_mode : bool
         True  → constrain output to JSON AND (on Vertex) route to the cheaper
                 Flash model. Use for the intent router.
@@ -59,12 +64,13 @@ def get_chat_llm(*, json_mode: bool = False, temperature: float = 0):
     The returned object exposes the standard LangChain `.invoke(...)` interface,
     so orchestrator/diagnostic code is identical across providers.
     """
-    if PROVIDER == "ollama":
+    provider = (provider or PROVIDER).lower()
+    if provider == "ollama":
         return _make_ollama(json_mode=json_mode, temperature=temperature)
-    if PROVIDER == "vertex":
+    if provider == "vertex":
         return _make_vertex(json_mode=json_mode, temperature=temperature)
     raise ValueError(
-        f"Unknown LLM_PROVIDER={PROVIDER!r}. Expected 'ollama' or 'vertex'."
+        f"Unknown LLM_PROVIDER={provider!r}. Expected 'ollama' or 'vertex'."
     )
 
 
@@ -99,9 +105,10 @@ def _make_vertex(*, json_mode: bool, temperature: float):
     )
 
 
-def active_provider() -> dict:
+def active_provider(provider: str | None = None) -> dict:
     """Small introspection helper for /health endpoints and demo banners."""
-    if PROVIDER == "ollama":
+    provider = (provider or PROVIDER).lower()
+    if provider == "ollama":
         return {"provider": "ollama", "host": _OLLAMA_HOST, "model": _OLLAMA_MODEL}
     return {
         "provider": "vertex",
