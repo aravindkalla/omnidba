@@ -186,6 +186,19 @@ def build_app(provider: str | None = None, engine: str | None = None):
 
         thread_id = (config or {}).get("configurable", {}).get("thread_id", "unknown")
 
+        # RMAN is Oracle-only. On any other engine, do NOT generate an Oracle
+        # script — return a clear message instead (Postgres pgBackRest = roadmap).
+        if engine != "oracle":
+            return {
+                **state,
+                "final_result": (
+                    f"⚠️ Backup/RMAN operations are only supported on Oracle in this "
+                    f"build. The active database is **{engine}**, so no backup script "
+                    f"was generated. (PostgreSQL backup via pgBackRest is on the roadmap.)"
+                ),
+                "proposed_rman_script": "",
+            }
+
         params = parse_backup_intent(state["query"])
         script = generate_rman_script(params)
 

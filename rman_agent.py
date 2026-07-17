@@ -47,6 +47,10 @@ _ORACLE_DSN      = os.getenv("ORACLE_DSN",      "localhost/FREEPDB1")
 _RMAN_DSN        = os.getenv("RMAN_DSN",        _ORACLE_DSN)
 # Set RMAN_OS_AUTH=true when running as the oracle OS user (no password needed).
 _RMAN_OS_AUTH    = os.getenv("RMAN_OS_AUTH", "false").lower() == "true"
+# When Oracle runs in a Docker container (our setup), `rman` is not on the host
+# PATH — set RMAN_DOCKER_CONTAINER=oracle-26ai to exec rman inside that container
+# (OS auth as the oracle user). Takes precedence over the host-path modes.
+_RMAN_DOCKER     = os.getenv("RMAN_DOCKER_CONTAINER", "")
 
 
 # ---------------------------------------------------------------------------
@@ -286,7 +290,11 @@ def execute_rman_backup(script: str) -> str:
       "RMAN FAILED — ..."             → red    (st.error)
     Should ONLY be called after explicit DBA approval in the HITL workflow.
     """
-    if _RMAN_OS_AUTH:
+    if _RMAN_DOCKER:
+        # Oracle in a container — exec rman inside it, OS-authenticated as sysdba.
+        cmd        = ["docker", "exec", "-i", _RMAN_DOCKER, "rman", "target", "/"]
+        rman_input = f"{script}\nEXIT;\n"
+    elif _RMAN_OS_AUTH:
         cmd        = ["rman", "target", "/"]
         rman_input = f"{script}\nEXIT;\n"
     else:
@@ -297,7 +305,7 @@ def execute_rman_backup(script: str) -> str:
             "EXIT;\n"
         )
 
-    logger.info("Executing RMAN backup (OS auth: %s).", _RMAN_OS_AUTH)
+    logger.info("Executing RMAN backup (docker=%s, OS auth=%s).", _RMAN_DOCKER or "no", _RMAN_OS_AUTH)
 
     try:
         proc = subprocess.run(

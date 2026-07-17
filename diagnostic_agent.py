@@ -262,8 +262,14 @@ def run_diagnostic_query(user_query: str,
         try:
             with connection.cursor() as cursor:
                 cursor.execute(sql)
-                columns = [col[0] for col in cursor.description]
-                raw     = cursor.fetchall()
+                # cursor.description is None for statements that return no result
+                # set (DDL/DML/SET, or a non-SELECT the LLM produced) — guard it
+                # so we return an empty result instead of crashing on iteration.
+                if cursor.description is None:
+                    columns, raw = [], []
+                else:
+                    columns = [col[0] for col in cursor.description]
+                    raw     = cursor.fetchall()
             data = [adapter.normalize_row(row) for row in raw]
             break  # success
         except adapter.error_types as e:

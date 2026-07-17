@@ -101,6 +101,39 @@ RMAN_BACKUP_HISTORY = (
     "FETCH FIRST 20 ROWS ONLY"
 )
 
+INDEX_STATUS = (
+    "SELECT owner, index_name, table_name, status, "
+    "       uniqueness, index_type "
+    "FROM dba_indexes "
+    "WHERE owner NOT IN ('SYS','SYSTEM','XDB','GSMADMIN_INTERNAL','MDSYS', "
+    "                    'CTXSYS','DBSNMP','OUTLN','AUDSYS','LBACSYS','DVSYS','OJVMSYS') "
+    "ORDER BY DECODE(status,'VALID',1,0), owner, index_name"
+)
+
+DB_USERS = (
+    "SELECT username, account_status, "
+    "       TO_CHAR(created,'YYYY-MM-DD') AS created, "
+    "       default_tablespace, profile "
+    "FROM dba_users "
+    "ORDER BY username"
+)
+
+DB_LIST = (
+    "SELECT name AS database_name, open_mode, database_role, log_mode, "
+    "       TO_CHAR(created,'YYYY-MM-DD') AS created "
+    "FROM v$database"
+)
+
+FRA_USAGE = (
+    "SELECT name AS fra_location, "
+    "       ROUND(space_limit/1073741824, 2) AS space_limit_gb, "
+    "       ROUND(space_used/1073741824, 2) AS space_used_gb, "
+    "       ROUND(space_reclaimable/1073741824, 2) AS reclaimable_gb, "
+    "       number_of_files, "
+    "       ROUND(space_used*100/NULLIF(space_limit,0), 2) AS pct_used "
+    "FROM v$recovery_file_dest"
+)
+
 
 # ===========================================================================
 # Template registry: key -> (sql, keyword_groups)
@@ -144,14 +177,42 @@ TEMPLATES: dict[str, tuple[str, list[list[str]]]] = {
         ACTIVE_SESSIONS,
         [
             ["active", "current", "connected", "who is", "who are"],
-            ["session", "sessions", "user", "users", "connection", "connections"],
+            ["session", "sessions", "connection", "connections"],
         ],
     ),
     "rman_backup_history": (
         RMAN_BACKUP_HISTORY,
         [
-            ["list", "show", "display", "history", "recent", "last", "previous", "status"],
+            # Must mention backup/rman — generic verbs like "status" alone caused
+            # "index status" to mis-route here. The router already separates
+            # backup EXECUTION from history, so this only sees read-only intents.
             ["rman", "backup", "backups", "backup job", "backup jobs", "backup history"],
+        ],
+    ),
+    "index_status": (
+        INDEX_STATUS,
+        [
+            ["index", "indexes", "indices"],
+            ["status", "state", "valid", "invalid", "unusable", "usable", "health", "rebuild"],
+        ],
+    ),
+    "db_users": (
+        DB_USERS,
+        [
+            ["user", "users", "account", "accounts", "role", "roles", "login", "logins", "schema", "schemas"],
+        ],
+    ),
+    "db_list": (
+        DB_LIST,
+        [
+            ["database", "databases", "pdb", "pdbs", "instance", "instances", "catalog"],
+        ],
+    ),
+    "fra_usage": (
+        FRA_USAGE,
+        [
+            ["fra", "flash recovery", "fast recovery", "recovery area", "recovery file", "db_recovery"],
+            ["usage", "used", "space", "full", "limit", "reclaimable", "size", "status"],
         ],
     ),
 }

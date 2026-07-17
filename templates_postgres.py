@@ -101,6 +101,21 @@ ACTIVE_SESSIONS = (
     "ORDER BY query_start NULLS LAST"
 )
 
+DB_USERS = (
+    "SELECT rolname AS username, rolsuper AS is_superuser, "
+    "       rolcreatedb AS can_create_db, rolcanlogin AS can_login, "
+    "       rolconnlimit AS conn_limit "
+    "FROM pg_roles ORDER BY rolname"
+)
+
+DB_LIST = (
+    "SELECT datname AS database_name, "
+    "       pg_catalog.pg_get_userbyid(datdba) AS owner, "
+    "       pg_size_pretty(pg_database_size(datname)) AS size, "
+    "       pg_encoding_to_char(encoding) AS encoding "
+    "FROM pg_database WHERE datistemplate = false ORDER BY datname"
+)
+
 
 # ===========================================================================
 # Template registry: key -> (sql, keyword_groups)
@@ -146,7 +161,19 @@ TEMPLATES: dict[str, tuple[str, list[list[str]]]] = {
         ACTIVE_SESSIONS,
         [
             ["active", "current", "connected", "who is", "who are"],
-            ["session", "sessions", "user", "users", "connection", "connections"],
+            ["session", "sessions", "connection", "connections"],
+        ],
+    ),
+    "db_users": (
+        DB_USERS,
+        [
+            ["user", "users", "account", "accounts", "role", "roles", "login", "logins", "schema", "schemas"],
+        ],
+    ),
+    "db_list": (
+        DB_LIST,
+        [
+            ["database", "databases", "instance", "instances", "catalog"],
         ],
     ),
     # rman_backup_history intentionally omitted — no RMAN in Postgres.

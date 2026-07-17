@@ -10,6 +10,7 @@ Layout
 
 import os
 import uuid
+import itertools
 from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
@@ -41,6 +42,12 @@ ENGINES = {
     "postgres": "🐘 PostgreSQL 16",
 }
 UI_USER = os.getenv("DEMO_USER", "omnidba-ui")
+
+# Monotonic per-run counter for unique Streamlit element keys. id(df) is NOT safe
+# (CPython reuses freed addresses → StreamlitDuplicateElementKey across reruns).
+_ELEMENT_SEQ = itertools.count()
+def _ekey(prefix: str) -> str:
+    return f"{prefix}_{next(_ELEMENT_SEQ)}"
 
 # ---------------------------------------------------------------------------
 # Session state bootstrap
@@ -299,7 +306,7 @@ def render_diagnostic_result(result: dict) -> None:
         badge_cols[2].metric("🟢 Healthy (<75%)", len(healthy))
 
         # Bar chart
-        st.plotly_chart(_usage_chart(df, pct_col, name_col), width="stretch", key=f"usage_chart_{id(df)}")
+        st.plotly_chart(_usage_chart(df, pct_col, name_col), width="stretch", key=_ekey("usage_chart"))
 
         # Alerts
         if critical:
@@ -327,7 +334,7 @@ def render_diagnostic_result(result: dict) -> None:
     # ── SQL performance view ─────────────────────────────────────────────────
     elif elapsed_col:
         st.markdown(f"### Top SQL by Elapsed Time — *{row_label}*")
-        st.plotly_chart(_elapsed_chart(df, elapsed_col, name_col), width="stretch", key=f"elapsed_chart_{id(df)}")
+        st.plotly_chart(_elapsed_chart(df, elapsed_col, name_col), width="stretch", key=_ekey("elapsed_chart"))
         st.dataframe(df, width="stretch")
 
     # ── Generic table (blocking sessions, invalid objects, etc.) ────────────
@@ -354,7 +361,7 @@ def render_diagnostic_result(result: dict) -> None:
         data=csv,
         file_name="oracle_query_result.csv",
         mime="text/csv",
-        key=f"csv_export_{id(df)}",
+        key=_ekey("csv_export"),
     )
 
 
