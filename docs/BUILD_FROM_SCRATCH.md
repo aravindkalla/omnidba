@@ -186,13 +186,27 @@ GEMINI_ROUTER_MODEL=gemini-2.5-flash
 GEMINI_SQL_MODEL=gemini-2.5-pro
 BQ_AUDIT_DATASET=omnidba_audit
 HITL_QUEUE=omnidba-hitl
+
+# Security — Model Armor (prompt-injection / jailbreak / PII guard)
 MODEL_ARMOR_TEMPLATE=omnidba-guard
+MODEL_ARMOR_LOCATION=us-central1   # regional endpoint the template lives in
+MODEL_ARMOR_MODE=enforce           # enforce (block) | monitor (flag only) | off
+
+# Governance sinks — best-effort, no-op when off / no GCP_PROJECT (air-gapped demo)
+AUDIT_SINK=auto                    # auto | off  (BigQuery omnidba_audit.turns)
+HITL_SINK=auto                     # auto | off  (Cloud Tasks omnidba-hitl)
+# HITL_CALLBACK_URL=https://...    # optional real approval-webhook target (placeholder otherwise)
 
 # Oracle  (admin/password = diagnostic_agent.py defaults; DO NOT leave PASSWORD blank → ORA-01005)
 ORACLE_USER=admin
 ORACLE_PASSWORD=password
 ORACLE_DSN=localhost:1521/FREEPDB1
 RMAN_DSN=localhost:1521/FREE
+# Oracle runs in a container → rman is NOT on the host PATH. This makes RMAN
+# execute inside the container (docker exec, OS-auth sysdba). REQUIRED for backups
+# to actually run — omit it and approved backups silently do nothing.
+RMAN_DOCKER_CONTAINER=oracle-26ai
+# RMAN_OS_AUTH=true        # only if running rman directly as the oracle OS user (no container)
 
 # Postgres
 PG_HOST=localhost
