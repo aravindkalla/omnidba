@@ -52,3 +52,6 @@ Thumbs.db
 .idea/
 .pgpw
 sa-key.json
+
+# Generated runbook PDFs (build artifacts)
+docs/pdf/
