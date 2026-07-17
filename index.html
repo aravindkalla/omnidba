@@ -559,7 +559,7 @@
     
     <div>
       <div class="hero-title">Autonomous <span>OmniDBA</span></div>
-      <div class="hero-sub">AI-powered · Fully local · Human-in-the-loop governance</div>
+      <div class="hero-sub">Agentic AI · Omni-channel LLM + DB · Model Armor security · HITL governance</div>
     </div>
       
     <a href="OmniDBA_Architecture_Flow.html" target="_blank" class="btn-view-arch">
@@ -578,12 +578,12 @@
     <!-- Card: What is it -->
     <div class="card card-blue">
       <div class="chip chip-blue">🤖 What it does</div>
-      <div class="card-title">Natural Language → Oracle Operations</div>
-      <div class="card-body">Type plain English. The agent classifies intent, generates Oracle SQL or RMAN scripts, and enforces human approval before any write operation.</div>
+      <div class="card-title">Natural Language → Any Database</div>
+      <div class="card-body">Type plain English. Model Armor screens the prompt, the agent classifies intent, generates SQL for <b>Oracle or PostgreSQL</b>, or an RMAN plan gated by human approval — on <b>Vertex/Gemini</b> or fully <b>air-gapped Ollama</b>.</div>
       <div class="stat-row">
-        <div class="stat"><div class="stat-val">100%</div><div class="stat-lbl">Local · No Cloud</div></div>
-        <div class="stat"><div class="stat-val">0</div><div class="stat-lbl">API Cost / Query</div></div>
-        <div class="stat"><div class="stat-val">&lt;1m</div><div class="stat-lbl">NL → Result</div></div>
+        <div class="stat"><div class="stat-val">2</div><div class="stat-lbl">LLM providers</div></div>
+        <div class="stat"><div class="stat-val">2</div><div class="stat-lbl">DB engines</div></div>
+        <div class="stat"><div class="stat-val">100%</div><div class="stat-lbl">Turns audited</div></div>
       </div>
     </div>
 
@@ -593,7 +593,7 @@
       <div class="card-title">End-to-End Agent Flow</div>
       <div class="flow-bar">
         <div class="flow-dot"></div><div class="flow-dot"></div><div class="flow-dot"></div>
-        <span class="flow-bar-text">Agent processing · LLM inference active</span>
+        <span class="flow-bar-text">Agent processing · Gemini 2.5 / Ollama inference</span>
       </div>
       <div class="pipeline">
         <div class="pipe-node" style="animation-delay:0.0s">
@@ -601,27 +601,32 @@
           <div class="pipe-lbl">NL Query</div>
         </div>
         <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
-        <div class="pipe-node" style="animation-delay:0.1s">
-          <div class="pipe-box"><div class="pipe-icon">🧭</div></div>
-          <div class="pipe-lbl">Intent Router</div>
+        <div class="pipe-node" style="animation-delay:0.08s">
+          <div class="pipe-box"><div class="pipe-icon">🛡️</div></div>
+          <div class="pipe-lbl">Model Armor</div>
         </div>
         <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
-        <div class="pipe-node" style="animation-delay:0.2s">
+        <div class="pipe-node" style="animation-delay:0.16s">
+          <div class="pipe-box"><div class="pipe-icon">🧭</div></div>
+          <div class="pipe-lbl">Router</div>
+        </div>
+        <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+        <div class="pipe-node" style="animation-delay:0.24s">
           <div class="pipe-box"><div class="pipe-icon">🔍</div></div>
           <div class="pipe-lbl">RAG + SQL</div>
         </div>
         <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
-        <div class="pipe-node" style="animation-delay:0.3s">
+        <div class="pipe-node" style="animation-delay:0.32s">
           <div class="pipe-box"><div class="pipe-icon">🗄️</div></div>
-          <div class="pipe-lbl">Oracle 26ai</div>
+          <div class="pipe-lbl">Oracle / PG</div>
         </div>
         <div class="pipe-arrow"><svg viewBox="0 0 16 16"><path d="M3 8h9m-3-3 3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
         <div class="pipe-node" style="animation-delay:0.4s">
           <div class="pipe-box"><div class="pipe-icon">📊</div></div>
-          <div class="pipe-lbl">Chart + CSV</div>
+          <div class="pipe-lbl">Result + Audit</div>
         </div>
       </div>
-      <div class="card-body" style="font-size:11px;color:var(--text3);">LangGraph state machine · MemorySaver checkpointer · Per-session thread_id</div>
+      <div class="card-body" style="font-size:11px;color:var(--text3);">LangGraph · guard → router → diagnostic / backup · per-(provider, engine) cached graph → BigQuery audit</div>
     </div>
 
     <!-- Card: Key numbers -->
@@ -629,20 +634,20 @@
       <div class="chip chip-purple">📐 By the numbers</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--offwhite);border:1.5px solid var(--border);border-radius:12px;">
-          <div style="font-size:11px;font-weight:600;color:var(--text2);">Oracle views seeded</div>
-          <div style="font-size:18px;font-weight:800;color:var(--purple);">11</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);">LLM providers (cloud + local)</div>
+          <div style="font-size:18px;font-weight:800;color:var(--purple);">2</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--offwhite);border:1.5px solid var(--border);border-radius:12px;">
-          <div style="font-size:11px;font-weight:600;color:var(--text2);">Curated AWR queries</div>
-          <div style="font-size:18px;font-weight:800;color:var(--purple);">4+</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);">DB engines · zero code change</div>
+          <div style="font-size:18px;font-weight:800;color:var(--purple);">2</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--offwhite);border:1.5px solid var(--border);border-radius:12px;">
           <div style="font-size:11px;font-weight:600;color:var(--text2);">HITL approval gates</div>
           <div style="font-size:18px;font-weight:800;color:var(--coral);">2</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--offwhite);border:1.5px solid var(--border);border-radius:12px;">
-          <div style="font-size:11px;font-weight:600;color:var(--text2);">Open-source components</div>
-          <div style="font-size:18px;font-weight:800;color:var(--teal);">8</div>
+          <div style="font-size:11px;font-weight:600;color:var(--text2);">GCP services wired</div>
+          <div style="font-size:18px;font-weight:800;color:var(--teal);">4</div>
         </div>
       </div>
     </div>
@@ -680,45 +685,53 @@
         </div>
       </div>
       <div class="divider"></div>
-      <div style="font-size:11px;color:var(--text3);">Intent router uses <span class="mono" style="font-size:10px;color:var(--amber);">Ollama · JSON mode</span> — defaults to Tier 1 (safest) on parse failure</div>
+      <div style="font-size:11px;color:var(--text3);">Intent router uses <span class="mono" style="font-size:10px;color:var(--amber);">Gemini 2.5 Flash / Ollama · JSON</span> — defaults to Tier 1 (safest) on parse failure</div>
     </div>
 
     <!-- Card: Tech stack -->
     <div class="card card-blue">
       <div class="chip chip-blue">🛠 Tech Stack</div>
-      <div class="card-title">8-Component Local Stack</div>
+      <div class="card-title">Omni-channel Cloud + Local Stack</div>
       <div class="tech-grid">
         <div class="tech-item">
+          <div class="tech-dot" style="background:#4285F4;"></div>
+          <div><div class="tech-name">Vertex AI</div><div class="tech-role">Gemini 2.5 Flash + Pro</div></div>
+        </div>
+        <div class="tech-item">
           <div class="tech-dot" style="background:#2563EB;"></div>
-          <div><div class="tech-name">Ollama</div><div class="tech-role">LLM server · llama3.1</div></div>
+          <div><div class="tech-name">Ollama</div><div class="tech-role">Local LLM · air-gapped</div></div>
         </div>
         <div class="tech-item">
           <div class="tech-dot" style="background:#7C3AED;"></div>
           <div><div class="tech-name">LangGraph</div><div class="tech-role">Agent orchestration</div></div>
         </div>
         <div class="tech-item">
-          <div class="tech-dot" style="background:#0891B2;"></div>
-          <div><div class="tech-name">ChromaDB</div><div class="tech-role">Vector store · ONNX</div></div>
-        </div>
-        <div class="tech-item">
           <div class="tech-dot" style="background:#059669;"></div>
-          <div><div class="tech-name">Vanna.ai</div><div class="tech-role">NL2SQL · RAG engine</div></div>
+          <div><div class="tech-name">Vanna.ai + Chroma</div><div class="tech-role">NL2SQL · RAG</div></div>
         </div>
         <div class="tech-item">
           <div class="tech-dot" style="background:#C2410C;"></div>
-          <div><div class="tech-name">Oracle 26ai</div><div class="tech-role">DB · AWR · Docker</div></div>
+          <div><div class="tech-name">Oracle 26ai</div><div class="tech-role">DB + RMAN · Docker</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#336791;"></div>
+          <div><div class="tech-name">PostgreSQL 16</div><div class="tech-role">DB · diagnostics</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#EA4335;"></div>
+          <div><div class="tech-name">Model Armor</div><div class="tech-role">Injection / PII guard</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#669DF6;"></div>
+          <div><div class="tech-name">BigQuery</div><div class="tech-role">Audit trail sink</div></div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-dot" style="background:#FBBC04;"></div>
+          <div><div class="tech-name">Cloud Tasks</div><div class="tech-role">HITL approval queue</div></div>
         </div>
         <div class="tech-item">
           <div class="tech-dot" style="background:#DB2777;"></div>
           <div><div class="tech-name">Streamlit</div><div class="tech-role">UI · Plotly charts</div></div>
-        </div>
-        <div class="tech-item">
-          <div class="tech-dot" style="background:#B45309;"></div>
-          <div><div class="tech-name">python-oracledb</div><div class="tech-role">Thin mode driver</div></div>
-        </div>
-        <div class="tech-item">
-          <div class="tech-dot" style="background:#1B5FC7;"></div>
-          <div><div class="tech-name">LangChain Ollama</div><div class="tech-role">JSON chains</div></div>
         </div>
       </div>
     </div>
@@ -730,12 +743,12 @@
       <div class="hitl-flow">
         <div class="hitl-step">
           <div class="hitl-num">1</div>
-          <div class="hitl-text">NL backup request submitted</div>
+          <div class="hitl-text">NL backup request (Oracle only) submitted</div>
           <div class="hitl-tag tag-auto">AUTO</div>
         </div>
         <div class="hitl-step">
           <div class="hitl-num">2</div>
-          <div class="hitl-text">Ollama extracts RMANParams (type, channels, encrypt)</div>
+          <div class="hitl-text">LLM extracts RMANParams · enqueued to Cloud Tasks</div>
           <div class="hitl-tag tag-auto">AUTO</div>
         </div>
         <div class="hitl-step">
@@ -750,7 +763,7 @@
         </div>
         <div class="hitl-step">
           <div class="hitl-num ok">✓</div>
-          <div class="hitl-text">execute_rman_backup() called post-approval only</div>
+          <div class="hitl-text">RMAN runs in-container post-approval only</div>
           <div class="hitl-tag tag-resume">EXEC</div>
         </div>
       </div>
@@ -764,8 +777,8 @@
     <!-- Card: Training layer -->
     <div class="card card-teal">
       <div class="chip chip-teal">📚 Training Layer</div>
-      <div class="card-title">Oracle Schema Seeding — train_on_oracle_schema()</div>
-      <div class="card-body" style="margin-bottom:10px;">One-time seed populates ChromaDB with Oracle DDL and curated AWR/ASH question–SQL pairs. Every successful live query writes back, creating a self-improving loop.</div>
+      <div class="card-title">Per-Engine Schema Seeding — train_schema(engine)</div>
+      <div class="card-body" style="margin-bottom:10px;">A one-time seed populates a <b>per-engine</b> ChromaDB store with catalog DDL and curated question–SQL pairs. Oracle and PostgreSQL keep separate stores, so the same question resolves correctly on each engine. Successful Tier-2 queries write back — a self-improving loop.</div>
       <div class="train-items">
         <div class="train-row"><span class="train-icon">💾</span><span class="train-label">Capacity · dba_data_files, dba_free_space, dba_tablespaces</span><span class="train-count">3 views</span></div>
         <div class="train-row"><span class="train-icon">⚡</span><span class="train-label">AWR Performance · dba_hist_sqlstat, dba_hist_snapshot</span><span class="train-count">2 views</span></div>
@@ -798,7 +811,7 @@
         </div>
       </div>
       <div style="margin-top:10px;font-size:11px;color:var(--text3);">
-        ChromaDB path: <span class="mono" style="font-size:10px;color:var(--purple);">./chroma_db/</span> · Embedding: <span class="mono" style="font-size:10px;color:var(--purple);">all-MiniLM-L6-v2 ONNX</span>
+        Stores: <span class="mono" style="font-size:10px;color:var(--purple);">chroma_db_gcp/</span> (Oracle) · <span class="mono" style="font-size:10px;color:var(--purple);">chroma_db_pg/</span> (Postgres) · Embedding: <span class="mono" style="font-size:10px;color:var(--purple);">all-MiniLM-L6-v2 ONNX</span>
       </div>
     </div>
 
@@ -809,21 +822,21 @@
 
     <div class="card card-blue">
       <div style="font-size:22px;margin-bottom:8px;">🔒</div>
-      <div class="card-title" style="font-size:13px;">Zero Data Egress</div>
+      <div class="card-title" style="font-size:13px;">Air-gapped Option</div>
       <div class="check-list">
-        <div class="check-item"><span class="check-icon">✓</span>LLM runs fully on-device via Ollama</div>
+        <div class="check-item"><span class="check-icon">✓</span>LLM_PROVIDER=ollama → zero external calls</div>
         <div class="check-item"><span class="check-icon">✓</span>Embeddings computed locally (ONNX)</div>
-        <div class="check-item"><span class="check-icon">✓</span>No OpenAI · No cloud API keys</div>
+        <div class="check-item"><span class="check-icon">✓</span>Cloud path adds Gemini · same graph</div>
       </div>
     </div>
 
     <div class="card card-teal">
-      <div style="font-size:22px;margin-bottom:8px;">📈</div>
-      <div class="card-title" style="font-size:13px;">Self-Improving RAG</div>
+      <div style="font-size:22px;margin-bottom:8px;">🔀</div>
+      <div class="card-title" style="font-size:13px;">Omni-channel · One Graph</div>
       <div class="check-list">
-        <div class="check-item"><span class="check-icon">✓</span>Every successful query added to ChromaDB</div>
-        <div class="check-item"><span class="check-icon">✓</span>Vanna learns enterprise-specific SQL patterns</div>
-        <div class="check-item"><span class="check-icon">✓</span>AWR DDL seeded via DBMS_METADATA.GET_DDL</div>
+        <div class="check-item"><span class="check-icon">✓</span>Oracle ↔ PostgreSQL · zero code change</div>
+        <div class="check-item"><span class="check-icon">✓</span>Vertex ↔ Ollama flipped live in the UI</div>
+        <div class="check-item"><span class="check-icon">✓</span>Cached graph per (provider, engine)</div>
       </div>
     </div>
 
@@ -832,18 +845,18 @@
       <div class="card-title" style="font-size:13px;">Production Upgrade Path</div>
       <div class="check-list">
         <div class="check-item"><span class="check-icon">✓</span>MemorySaver → PostgresSaver (drop-in)</div>
-        <div class="check-item"><span class="check-icon">✓</span>llama3.1 → SQLCoder 7B for better SQL</div>
-        <div class="check-item"><span class="check-icon">✓</span>WSL Docker → Production Oracle instance</div>
+        <div class="check-item"><span class="check-icon">✓</span>More engines: SQL Server / MySQL / Mongo</div>
+        <div class="check-item"><span class="check-icon">✓</span>IAP / SSO for the shared UI</div>
       </div>
     </div>
 
     <div class="card card-coral">
-      <div style="font-size:22px;margin-bottom:8px;">⚙️</div>
-      <div class="card-title" style="font-size:13px;">Governance Built-in</div>
+      <div style="font-size:22px;margin-bottom:8px;">🛡</div>
+      <div class="card-title" style="font-size:13px;">Security &amp; Governance</div>
       <div class="check-list">
-        <div class="check-item"><span class="check-icon">✓</span>Tier 3 ops require explicit human approval</div>
-        <div class="check-item"><span class="check-icon">✓</span>All generated SQL visible and exportable</div>
-        <div class="check-item"><span class="check-icon">✓</span>Revision cycle — script updated on feedback</div>
+        <div class="check-item"><span class="check-icon">✓</span>Model Armor blocks injection · PII</div>
+        <div class="check-item"><span class="check-icon">✓</span>Every turn audited to BigQuery</div>
+        <div class="check-item"><span class="check-icon">✓</span>RMAN writes gated by human approval</div>
       </div>
     </div>
 
@@ -864,13 +877,13 @@
             EVOLVING
           </div>
         </div>
-        <div class="footer-sub">LangGraph · Ollama llama3.1 · Vanna RAG · Oracle 26ai Free · Streamlit</div>
+        <div class="footer-sub">LangGraph · Vertex Gemini 2.5 / Ollama · Vanna RAG · Oracle 26ai + PostgreSQL 16 · Model Armor · BigQuery · Streamlit</div>
       </div>
     </div>
 
     <div class="footer-tags">
-      <div class="footer-tag">v1.2</div>
-      <div class="footer-tag">Local Engine</div>
+      <div class="footer-tag">v3.0 · GCP</div>
+      <div class="footer-tag">Omni-channel</div>
     </div>
   </div>
   </div>
